@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFCD00" />
+  <link rel="manifest" href="manifest.json" />
+  <title>FrameFit AR</title>
+  <style>
+    :root{
+      --yellow:#FFCD00; --graphite:#504D4A; --gray:#A6A9AA; --soft:#F6F4EF; --line:#E9E5DC;
+      --good:#1f9d55; --warn:#d9822b; --bad:#c92a2a;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    *{box-sizing:border-box} html,body{margin:0;height:100%;background:#111;color:#fff;overflow:hidden}
+    button,input,select{font:inherit}
+    .app{position:fixed;inset:0;display:grid;grid-template-rows:1fr auto;background:#111}
+    #camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#111;transform:scaleX(-1)}
+    .stage{position:relative;overflow:hidden;background:#111;touch-action:none}
+    .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);background-size:40px 40px;opacity:.25;pointer-events:none}
+    .frame-wrap{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) rotate(var(--rot,0deg));width:260px;height:180px;touch-action:none;filter:drop-shadow(0 22px 28px rgba(0,0,0,.35))}
+    .frame{position:absolute;inset:0;border:18px solid var(--yellow);border-radius:8px;background:rgba(255,205,0,.04);box-shadow:inset 0 0 0 2px rgba(80,77,74,.5),0 0 0 2px rgba(255,255,255,.35)}
+    .frame:after{content:"";position:absolute;left:calc(100% + 16px);top:-18px;width:var(--depth,46px);height:calc(100% + 36px);background:linear-gradient(90deg,rgba(255,205,0,.85),rgba(80,77,74,.35));transform:skewY(35deg);transform-origin:left top;border-radius:0 8px 8px 0;opacity:.88}
+    .inner{position:absolute;inset:18px;border:2px dashed rgba(255,255,255,.78);border-radius:4px;background:rgba(255,255,255,.08)}
+    .label{position:absolute;left:50%;top:-42px;transform:translateX(-50%);background:rgba(17,17,17,.72);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 12px;font-size:13px;white-space:nowrap}
+    .rulers{position:absolute;inset:0;pointer-events:none}.ruler-x,.ruler-y{position:absolute;background:rgba(255,255,255,.92)}.ruler-x{height:2px;left:0;right:0;bottom:-18px}.ruler-y{width:2px;top:0;bottom:0;right:-18px}.ruler-x:after,.ruler-y:after{position:absolute;font-size:12px;background:rgba(17,17,17,.72);border-radius:999px;padding:4px 8px}.ruler-x:after{content:attr(data-text);left:50%;top:6px;transform:translateX(-50%)}.ruler-y:after{content:attr(data-text);left:6px;top:50%;transform:translateY(-50%);white-space:nowrap}
+    .topbar{position:absolute;left:14px;right:14px;top:calc(env(safe-area-inset-top) + 12px);display:flex;gap:8px;align-items:center;justify-content:space-between}.brand{background:rgba(246,244,239,.92);color:var(--graphite);border-radius:18px;padding:10px 14px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.22)}.pill{border:0;border-radius:999px;padding:10px 12px;background:rgba(255,255,255,.18);color:white;backdrop-filter:blur(16px)}
+    .panel{position:relative;z-index:5;background:rgba(246,244,239,.96);color:var(--graphite);border-radius:28px 28px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -16px 40px rgba(0,0,0,.26);max-height:52vh;overflow:auto}.handle{width:44px;height:5px;border-radius:999px;background:var(--line);margin:0 auto 12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.field{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px 12px}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input,.field select{width:100%;border:0;outline:0;color:var(--graphite);background:transparent;font-weight:750}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.btn{border:0;border-radius:18px;padding:13px 14px;font-weight:850;color:var(--graphite);background:var(--yellow)}.btn.secondary{background:#fff;border:1px solid var(--line)}.result{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:20px;padding:12px;margin-top:10px}.dot{width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--warn)}.result.good .dot{background:var(--good)}.result.bad .dot{background:var(--bad)}.result b{display:block;margin-bottom:2px}.result small{color:#777;line-height:1.35}.hint{font-size:12px;line-height:1.35;color:#777;margin-top:8px}.hidden{display:none!important}.mode{font-size:12px;line-height:1.35;color:#fff;background:rgba(17,17,17,.62);backdrop-filter:blur(16px);position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:10px 12px;z-index:4}.panel-open .mode{display:none}
+  </style>
+</head>
+<body>
+  <div class="app panel-open" id="app">
+    <main class="stage" id="stage">
+      <video id="camera" autoplay playsinline muted></video>
+      <div class="grid"></div>
+      <div class="topbar"><div class="brand">FrameFit AR</div><button class="pill" id="togglePanel">Настройки</button></div>
+      <div class="frame-wrap" id="frameWrap" style="--rot:0deg;--depth:46px">
+        <div class="label" id="frameLabel">30×40 см, глубина 5 см</div>
+        <div class="frame"><div class="inner"></div></div>
+        <div class="rulers"><div class="ruler-x" id="rx" data-text="30 см"></div><div class="ruler-y" id="ry" data-text="40 см"></div></div>
+      </div>
+      <div class="mode" id="modeText">Двигайте рамку пальцем. Масштаб меняется ползунком. Для проверки глубины приложите объект сбоку и сравните с желтой боковой гранью.</div>
+    </main>
+    <section class="panel" id="panel">
+      <div class="handle"></div>
+      <div class="row">
+        <div class="field"><label>Размер рамки</label><select id="preset"><option value="15,20,3">15×20, глубина 3 см</option><option value="21,30,4">21×30, глубина 4 см</option><option value="30,40,5" selected>30×40, глубина 5 см</option><option value="40,50,6">40×50, глубина 6 см</option><option value="custom">Свой размер</option></select></div>
+        <div class="field"><label>Масштаб, px на 1 см</label><input id="scale" type="number" value="8" min="2" max="30" step="0.5"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Ширина, см</label><input id="w" type="number" value="30" step="0.1"></div>
+        <div class="field"><label>Высота, см</label><input id="h" type="number" value="40" step="0.1"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Глубина рамки, см</label><input id="d" type="number" value="5" step="0.1"></div>
+        <div class="field"><label>Глубина объекта, см</label><input id="objD" type="number" value="4" step="0.1"></div>
+      </div>
+      <div class="field"><label>Быстрая настройка масштаба</label><input id="scaleRange" type="range" min="3" max="18" step="0.2" value="8"></div>
+      <div class="actions"><button class="btn" id="fitBtn">Проверить</button><button class="btn secondary" id="shotBtn">Снимок</button></div>
+      <div class="result" id="result"><span class="dot"></span><div><b>Проверьте посадку объекта</b><small>Выберите рамку, наведите камеру на объект и сравните его размер с внутренним полем рамки.</small></div></div>
+      <div class="hint">Для точнее примерки положите рядом лист А4 или линейку и подберите масштаб так, чтобы виртуальная ширина совпала с реальной. Потом наведите рамку на объект.</div>
+    </section>
+  </div>
+<script>
+const $=s=>document.querySelector(s);const video=$('#camera'),wrap=$('#frameWrap'),app=$('#app');
+const els={preset:$('#preset'),scale:$('#scale'),scaleRange:$('#scaleRange'),w:$('#w'),h:$('#h'),d:$('#d'),objD:$('#objD'),label:$('#frameLabel'),rx:$('#rx'),ry:$('#ry'),result:$('#result')};
+let state={x:innerWidth/2,y:innerHeight*.43,rot:0,drag:false,dx:0,dy:0};
+async function startCamera(){try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});video.srcObject=stream;}catch(e){$('#modeText').textContent='Камера не запустилась. Откройте страницу через HTTPS и разрешите доступ к камере.'}}
+function update(){let w=+els.w.value,h=+els.h.value,d=+els.d.value,scale=+els.scale.value;wrap.style.width=(w*scale)+'px';wrap.style.height=(h*scale)+'px';wrap.style.left=state.x+'px';wrap.style.top=state.y+'px';wrap.style.setProperty('--rot',state.rot+'deg');wrap.style.setProperty('--depth',Math.max(18,d*scale*1.15)+'px');els.label.textContent=`${w}×${h} см, глубина ${d} см`;els.rx.dataset.text=w+' см';els.ry.dataset.text=h+' см';check(false)}
+function check(show=true){let d=+els.d.value,obj=+els.objD.value,res=els.result;res.className='result';let reserve=d-obj;if(isNaN(reserve)){return}let title='Нужно проверить размеры',txt='Введите глубину объекта, чтобы понять, подойдет ли глубокая рамка.';if(reserve>=1){res.classList.add('good');title='Подходит';txt=`Запас по глубине примерно ${reserve.toFixed(1)} см. Можно рекомендовать эту рамку.`}else if(reserve>=0){title='Впритык';txt=`Запас всего ${reserve.toFixed(1)} см. Лучше взять рамку глубже, чтобы объект не упирался в стекло.`}else{res.classList.add('bad');title='Не подходит';txt=`Объект глубже рамки на ${Math.abs(reserve).toFixed(1)} см. Нужна рамка большей глубины.`}res.querySelector('b').textContent=title;res.querySelector('small').textContent=txt;if(show)navigator.vibrate?.(25)}
+['input','change'].forEach(ev=>['scale','scaleRange','w','h','d','objD'].forEach(id=>els[id].addEventListener(ev,e=>{if(id==='scale')els.scaleRange.value=els.scale.value;if(id==='scaleRange')els.scale.value=els.scaleRange.value; if(id!=='preset') els.preset.value='custom'; update()})));
+els.preset.addEventListener('change',()=>{if(els.preset.value==='custom')return;let [w,h,d]=els.preset.value.split(',');els.w.value=w;els.h.value=h;els.d.value=d;update()});
+$('#fitBtn').onclick=()=>check(true);$('#togglePanel').onclick=()=>app.classList.toggle('panel-open');$('#shotBtn').onclick=()=>alert('В прототипе снимок можно сделать стандартным скриншотом телефона. В следующей версии добавим сохранение фото с наложенной рамкой.');
+wrap.addEventListener('pointerdown',e=>{state.drag=true;wrap.setPointerCapture(e.pointerId);state.dx=e.clientX-state.x;state.dy=e.clientY-state.y});wrap.addEventListener('pointermove',e=>{if(!state.drag)return;state.x=e.clientX-state.dx;state.y=e.clientY-state.dy;update()});wrap.addEventListener('pointerup',()=>state.drag=false);
+document.addEventListener('keydown',e=>{if(e.key==='q')state.rot-=2;if(e.key==='e')state.rot+=2;update()});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+startCamera();update();
+</script>
+</body>
+</html>
