@@ -15,7 +15,22 @@
     *{box-sizing:border-box} html,body{margin:0;height:100%;background:#111;color:#fff;overflow:hidden}
     button,input,select{font:inherit}
     .app{position:fixed;inset:0;display:grid;grid-template-rows:1fr auto;background:#111}
-    #camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#111;transform:scaleX(-1)}
+    #camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#111}
+#scanCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.scan-status{
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:calc(110px + env(safe-area-inset-bottom));
+  z-index:4;
+  background:rgba(17,17,17,.72);
+  color:#fff;
+  border-radius:18px;
+  padding:10px 12px;
+  font-size:13px;
+  backdrop-filter:blur(16px);
+}
+.panel-open .scan-status{display:none}
     .stage{position:relative;overflow:hidden;background:#111;touch-action:none}
     .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);background-size:40px 40px;opacity:.25;pointer-events:none}
     .frame-wrap{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) rotate(var(--rot,0deg));width:260px;height:180px;touch-action:none;filter:drop-shadow(0 22px 28px rgba(0,0,0,.35))}
@@ -139,6 +154,7 @@
   <div class="app panel-open" id="app">
     <main class="stage" id="stage">
       <video id="camera" autoplay playsinline muted></video>
+      <canvas id="scanCanvas"></canvas>
       <div class="grid"></div>
       <div class="topbar"><div class="brand">FrameFit AR</div><button class="pill" id="togglePanel">Настройки</button></div>
       <div class="a4-reminder" id="a4Reminder">
@@ -153,6 +169,9 @@
         <div class="frame"><div class="inner"></div></div>
         <div class="rulers"><div class="ruler-x" id="rx" data-text="30 см"></div><div class="ruler-y" id="ry" data-text="40 см"></div></div>
       </div>
+     <div class="scan-status" id="scanStatus">
+  Положите лист А4 и предмет рядом. Нажмите «Сканировать размер».
+</div>
       <div class="mode" id="modeText">Двигайте рамку пальцем. Масштаб меняется ползунком. Для проверки глубины приложите объект сбоку и сравните с желтой боковой гранью.</div>
     </main>
     <section class="panel" id="panel">
@@ -166,12 +185,16 @@
         <div class="field"><label>Высота, см</label><input id="h" type="number" value="40" step="0.1"></div>
       </div>
       <div class="row">
+  <div class="field"><label>Ширина предмета, см</label><input id="objW" type="number" value="" step="0.1" placeholder="авто"></div>
+  <div class="field"><label>Высота предмета, см</label><input id="objH" type="number" value="" step="0.1" placeholder="авто"></div>
+</div>
+      <div class="row">
         <div class="field"><label>Глубина рамки, см</label><input id="d" type="number" value="5" step="0.1"></div>
         <div class="field"><label>Глубина объекта, см</label><input id="objD" type="number" value="4" step="0.1"></div>
       </div>
       <div class="field"><label>Быстрая настройка масштаба</label><input id="scaleRange" type="range" min="3" max="18" step="0.2" value="8"></div>
       <div class="actions">
-  <button class="btn" id="calibrateBtn">Калибровать по А4</button>
+  <button class="btn" id="scanBtn">Сканировать размер</button>
   <button class="btn secondary" id="fitBtn">Проверить</button>
 </div>
 
@@ -185,7 +208,8 @@
 </div>
     </section>
   </div>
-<script>
+<script async src="https://docs.opencv.org/4.x/opencv.js" onload="cv['onRuntimeInitialized']=()=>{window.cvReady=true}"></script>
+  <script>
 const $ = s => document.querySelector(s);
 
 const video = $('#camera');
@@ -203,6 +227,8 @@ const els = {
   h: $('#h'),
   d: $('#d'),
   objD: $('#objD'),
+  objW: $('#objW'),
+objH: $('#objH'),
   label: $('#frameLabel'),
   rx: $('#rx'),
   ry: $('#ry'),
@@ -292,29 +318,38 @@ function updateA4(){
 }
 
 function check(show = true){
-  let d = +els.d.value;
-  let obj = +els.objD.value;
-  let res = els.result;
+  let frameW = +els.w.value;
+  let frameH = +els.h.value;
+  let frameD = +els.d.value;
 
+  let objW = +els.objW.value;
+  let objH = +els.objH.value;
+  let objD = +els.objD.value;
+
+  let res = els.result;
   res.className = 'result';
 
-  let reserve = d - obj;
-  if(isNaN(reserve)) return;
+  let title = 'Нужно отсканировать предмет';
+  let txt = 'Положите рядом лист А4 и предмет, затем нажмите «Сканировать размер».';
 
-  let title = 'Нужно проверить размеры';
-  let txt = 'Введите глубину объекта, чтобы понять, подойдет ли глубокая рамка.';
+  if(!objW || !objH){
+    res.querySelector('b').textContent = title;
+    res.querySelector('small').textContent = txt;
+    return;
+  }
 
-  if(reserve >= 1){
+  let reserveW = frameW - objW;
+  let reserveH = frameH - objH;
+  let reserveD = frameD - objD;
+
+  if(reserveW >= 0 && reserveH >= 0 && reserveD >= 0){
     res.classList.add('good');
     title = 'Подходит';
-    txt = `Запас по глубине примерно ${reserve.toFixed(1)} см. Можно рекомендовать эту рамку.`;
-  }else if(reserve >= 0){
-    title = 'Впритык';
-    txt = `Запас всего ${reserve.toFixed(1)} см. Лучше взять рамку глубже, чтобы объект не упирался в стекло.`;
+    txt = `Предмет примерно ${objW.toFixed(1)}×${objH.toFixed(1)} см. Запас: ${reserveW.toFixed(1)} см по ширине, ${reserveH.toFixed(1)} см по высоте, ${reserveD.toFixed(1)} см по глубине.`;
   }else{
     res.classList.add('bad');
     title = 'Не подходит';
-    txt = `Объект глубже рамки на ${Math.abs(reserve).toFixed(1)} см. Нужна рамка большей глубины.`;
+    txt = `Предмет примерно ${objW.toFixed(1)}×${objH.toFixed(1)} см. Нужна рамка больше.`;
   }
 
   res.querySelector('b').textContent = title;
@@ -378,9 +413,7 @@ $('#hideReminder').onclick = () => {
   $('#a4Reminder').classList.add('hidden');
 };
 
-$('#calibrateBtn').onclick = () => {
-  calibrateByA4();
-};
+
 
 $('#toggleA4Btn').onclick = () => {
   a4.visible = !a4.visible;
@@ -479,7 +512,172 @@ document.addEventListener('keydown', e => {
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js');
 }
+const scanCanvas = $('#scanCanvas');
+const scanCtx = scanCanvas.getContext('2d');
 
+function resizeScanCanvas(){
+  scanCanvas.width = innerWidth;
+  scanCanvas.height = innerHeight;
+}
+
+function drawVideoCover(){
+  resizeScanCanvas();
+
+  const cw = scanCanvas.width;
+  const ch = scanCanvas.height;
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+
+  if(!vw || !vh) return false;
+
+  const scale = Math.max(cw / vw, ch / vh);
+  const sw = cw / scale;
+  const sh = ch / scale;
+  const sx = (vw - sw) / 2;
+  const sy = (vh - sh) / 2;
+
+  scanCtx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
+  return true;
+}
+
+function rectsOverlap(a,b){
+  return !(
+    a.x + a.width < b.x ||
+    b.x + b.width < a.x ||
+    a.y + a.height < b.y ||
+    b.y + b.height < a.y
+  );
+}
+
+function scanObjectSize(){
+  if(!window.cvReady){
+    $('#scanStatus').textContent = 'Сканер еще загружается. Подождите пару секунд.';
+    return;
+  }
+
+  if(!drawVideoCover()){
+    $('#scanStatus').textContent = 'Камера еще не готова.';
+    return;
+  }
+
+  $('#scanStatus').textContent = 'Сканирую лист А4 и предмет...';
+
+  let src = cv.imread(scanCanvas);
+  let gray = new cv.Mat();
+  let blur = new cv.Mat();
+  let edges = new cv.Mat();
+  let contours = new cv.MatVector();
+  let hierarchy = new cv.Mat();
+
+  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+  cv.GaussianBlur(gray, blur, new cv.Size(5,5), 0);
+  cv.Canny(blur, edges, 50, 150);
+  cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+  let a4Rect = null;
+  let a4Area = 0;
+
+  for(let i = 0; i < contours.size(); i++){
+    let cnt = contours.get(i);
+    let peri = cv.arcLength(cnt, true);
+    let approx = new cv.Mat();
+    cv.approxPolyDP(cnt, approx, 0.03 * peri, true);
+
+    let rect = cv.boundingRect(cnt);
+    let area = rect.width * rect.height;
+    let ratio = Math.max(rect.width, rect.height) / Math.min(rect.width, rect.height);
+
+    if(approx.rows === 4 && area > 12000 && ratio > 1.25 && ratio < 1.6){
+      if(area > a4Area){
+        a4Area = area;
+        a4Rect = rect;
+      }
+    }
+
+    approx.delete();
+    cnt.delete();
+  }
+
+  if(!a4Rect){
+    $('#scanStatus').textContent = 'Лист А4 не найден. Положите его целиком в кадр на контрастный фон.';
+    src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+    return;
+  }
+
+  const pxPerCmW = Math.min(a4Rect.width, a4Rect.height) / 21;
+  const pxPerCmH = Math.max(a4Rect.width, a4Rect.height) / 29.7;
+  const pxPerCm = (pxPerCmW + pxPerCmH) / 2;
+
+  let objRect = null;
+  let objArea = 0;
+
+  for(let i = 0; i < contours.size(); i++){
+    let cnt = contours.get(i);
+    let rect = cv.boundingRect(cnt);
+    let area = rect.width * rect.height;
+
+    if(area < 4000) {
+      cnt.delete();
+      continue;
+    }
+
+    if(rectsOverlap(rect, a4Rect)){
+      cnt.delete();
+      continue;
+    }
+
+    if(area > objArea){
+      objArea = area;
+      objRect = rect;
+    }
+
+    cnt.delete();
+  }
+
+  scanCtx.clearRect(0,0,scanCanvas.width,scanCanvas.height);
+  drawVideoCover();
+
+  scanCtx.lineWidth = 4;
+  scanCtx.strokeStyle = '#FFCD00';
+  scanCtx.strokeRect(a4Rect.x, a4Rect.y, a4Rect.width, a4Rect.height);
+
+  scanCtx.fillStyle = 'rgba(17,17,17,.75)';
+  scanCtx.fillRect(a4Rect.x, a4Rect.y - 34, 120, 28);
+  scanCtx.fillStyle = '#fff';
+  scanCtx.font = '16px system-ui';
+  scanCtx.fillText('Лист А4', a4Rect.x + 10, a4Rect.y - 13);
+
+  if(!objRect){
+    $('#scanStatus').textContent = 'Предмет не найден. Положите его рядом с листом А4, не на сам лист.';
+    src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+    return;
+  }
+
+  let objW = objRect.width / pxPerCm;
+  let objH = objRect.height / pxPerCm;
+
+  els.objW.value = objW.toFixed(1);
+  els.objH.value = objH.toFixed(1);
+
+  scanCtx.strokeStyle = '#1f9d55';
+  scanCtx.strokeRect(objRect.x, objRect.y, objRect.width, objRect.height);
+
+  scanCtx.fillStyle = 'rgba(17,17,17,.75)';
+  scanCtx.fillRect(objRect.x, objRect.y - 40, 190, 32);
+  scanCtx.fillStyle = '#fff';
+  scanCtx.font = '16px system-ui';
+  scanCtx.fillText(`${objW.toFixed(1)} × ${objH.toFixed(1)} см`, objRect.x + 10, objRect.y - 18);
+
+  $('#scanStatus').textContent = `Размер предмета найден: ${objW.toFixed(1)} × ${objH.toFixed(1)} см.`;
+
+  check(true);
+
+  src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+}
+
+$('#scanBtn').onclick = () => {
+  scanObjectSize();
+};
 startCamera();
 update();
 </script>
