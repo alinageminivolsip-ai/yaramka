@@ -148,6 +148,28 @@
   font-size:12px;
   white-space:nowrap;
 }
+.floating-scan-btn{
+  position:absolute;
+  z-index:7;
+  display:none;
+  border:0;
+  border-radius:999px;
+  padding:12px 16px;
+  background:var(--yellow);
+  color:var(--graphite);
+  font-weight:900;
+  box-shadow:0 14px 34px rgba(0,0,0,.32);
+  transform:translate(-50%, -50%);
+  white-space:nowrap;
+}
+
+.floating-scan-btn.visible{
+  display:block;
+}
+
+.scanning .floating-scan-btn{
+  display:none;
+}
   </style>
 </head>
 <body>
@@ -155,6 +177,9 @@
     <main class="stage" id="stage">
       <video id="camera" autoplay playsinline muted></video>
       <canvas id="scanCanvas"></canvas>
+      <button class="floating-scan-btn" id="floatingScanBtn" type="button">
+  Сканировать предмет
+</button>
       <div class="grid"></div>
       <div class="topbar"><div class="brand">FrameFit AR</div><button class="pill" id="togglePanel">Настройки</button></div>
       <div class="a4-reminder" id="a4Reminder">
@@ -194,7 +219,7 @@
       </div>
       <div class="field"><label>Быстрая настройка масштаба</label><input id="scaleRange" type="range" min="3" max="18" step="0.2" value="8"></div>
       <div class="actions">
-  <button class="btn" id="scanBtn">Сканировать размер</button>
+  <button class="btn" id="scanBtn">Найти предмет</button>
   <button class="btn secondary" id="fitBtn">Проверить</button>
 </div>
 
@@ -218,7 +243,22 @@ const app = $('#app');
 const a4Box = $('#a4Box');
 const panel = $('#panel');
 const handle = panel.querySelector('.handle');
+const scanCanvas = $('#scanCanvas');
+const scanCtx = scanCanvas.getContext('2d');
+const floatingScanBtn = $('#floatingScanBtn');
 
+let detectedScan = {
+  a4Rect: null,
+  objRect: null,
+  objW: 0,
+  objH: 0,
+  pxPerCm: 0
+};
+
+let scanAnimation = {
+  active: false,
+  progress: 0
+};
 const els = {
   preset: $('#preset'),
   scale: $('#scale'),
@@ -396,7 +436,10 @@ els.preset.addEventListener('change', () => {
 });
 
 $('#fitBtn').onclick = () => check(true);
-
+$('#scanBtn').onclick = () => {
+  closePanel();              // свернуть шторку
+  detectA4AndObject(true);   // запустить поиск А4 и предмета
+};
 $('#togglePanel').onclick = () => {
   if(app.classList.contains('panel-open')){
     closePanel();
@@ -709,8 +752,301 @@ scanCtx.fillText(sizeText, badgeX + 14, badgeY + 25);
 $('#scanBtn').onclick = () => {
   scanObjectSize();
 };
+function resizeScanCanvas(){
+  scanCanvas.width = innerWidth;
+  scanCanvas.height = innerHeight;
+}
+
+function drawVideoCover(){
+  resizeScanCanvas();
+
+  const cw = scanCanvas.width;
+  const ch = scanCanvas.height;
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+
+  if(!vw || !vh) return false;
+
+  const scale = Math.max(cw / vw, ch / vh);
+  const sw = cw / scale;
+  const sh = ch / scale;
+  const sx = (vw - sw) / 2;
+  const sy = (vh - sh) / 2;
+
+  scanCtx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
+  return true;
+}
+
+function rectsOverlap(a,b){
+  return !(
+    a.x + a.width < b.x ||
+    b.x + b.width < a.x ||
+    a.y + a.height < b.y ||
+    b.y + b.height < a.y
+  );
+}
+
+function roundRect(ctx, x, y, w, h, r){
+  const radius = Math.min(r, w / 2, h / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function detectA4AndObject(showButton = true){
+  if(!window.cvReady){
+    $('#scanStatus').textContent = 'Сканер загружается. Подождите пару секунд.';
+    return false;
+  }
+
+  if(!drawVideoCover()){
+    $('#scanStatus').textContent = 'Камера еще не готова.';
+    return false;
+  }
+
+  let src = cv.imread(scanCanvas);
+  let gray = new cv.Mat();
+  let blur = new cv.Mat();
+  let edges = new cv.Mat();
+  let contours = new cv.MatVector();
+  let hierarchy = new cv.Mat();
+
+  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+  cv.GaussianBlur(gray, blur, new cv.Size(5,5), 0);
+  cv.Canny(blur, edges, 50, 150);
+  cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+  let a4Rect = null;
+  let a4Area = 0;
+
+  for(let i = 0; i < contours.size(); i++){
+    let cnt = contours.get(i);
+    let peri = cv.arcLength(cnt, true);
+    let approx = new cv.Mat();
+    cv.approxPolyDP(cnt, approx, 0.03 * peri, true);
+
+    let rect = cv.boundingRect(cnt);
+    let area = rect.width * rect.height;
+    let ratio = Math.max(rect.width, rect.height) / Math.min(rect.width, rect.height);
+
+    if(approx.rows === 4 && area > 12000 && ratio > 1.25 && ratio < 1.6){
+      if(area > a4Area){
+        a4Area = area;
+        a4Rect = rect;
+      }
+    }
+
+    approx.delete();
+  }
+
+  if(!a4Rect){
+    floatingScanBtn.classList.remove('visible');
+    $('#scanStatus').textContent = 'Ищу лист А4. Положите его целиком в кадр.';
+    src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+    return false;
+  }
+
+  const pxPerCmW = Math.min(a4Rect.width, a4Rect.height) / 21;
+  const pxPerCmH = Math.max(a4Rect.width, a4Rect.height) / 29.7;
+  const pxPerCm = (pxPerCmW + pxPerCmH) / 2;
+
+  let objRect = null;
+  let objArea = 0;
+
+  for(let i = 0; i < contours.size(); i++){
+    let cnt = contours.get(i);
+    let rect = cv.boundingRect(cnt);
+    let area = rect.width * rect.height;
+
+    if(area < 4000) continue;
+    if(rectsOverlap(rect, a4Rect)) continue;
+
+    if(area > objArea){
+      objArea = area;
+      objRect = rect;
+    }
+  }
+
+  scanCtx.clearRect(0,0,scanCanvas.width,scanCanvas.height);
+  drawVideoCover();
+
+  scanCtx.lineWidth = 4;
+  scanCtx.strokeStyle = '#FFCD00';
+  scanCtx.strokeRect(a4Rect.x, a4Rect.y, a4Rect.width, a4Rect.height);
+
+  if(!objRect){
+    floatingScanBtn.classList.remove('visible');
+    $('#scanStatus').textContent = 'Ищу предмет рядом с листом А4.';
+    src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+    return false;
+  }
+
+  const objW = objRect.width / pxPerCm;
+  const objH = objRect.height / pxPerCm;
+
+  detectedScan = {
+    a4Rect,
+    objRect,
+    objW,
+    objH,
+    pxPerCm
+  };
+
+  scanCtx.strokeStyle = 'rgba(31,157,85,.9)';
+  scanCtx.lineWidth = 3;
+  scanCtx.strokeRect(objRect.x, objRect.y, objRect.width, objRect.height);
+
+  if(showButton){
+    const btnX = Math.min(innerWidth - 110, Math.max(110, objRect.x + objRect.width / 2));
+    const btnY = Math.max(90, objRect.y - 36);
+
+    floatingScanBtn.style.left = btnX + 'px';
+    floatingScanBtn.style.top = btnY + 'px';
+    floatingScanBtn.classList.add('visible');
+
+    $('#scanStatus').textContent = 'Предмет найден. Нажмите кнопку рядом с ним.';
+  }
+
+  src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+
+  return true;
+}
+
+function drawScanResult(){
+  const {a4Rect, objRect, objW, objH} = detectedScan;
+  if(!objRect) return;
+
+  scanCtx.clearRect(0,0,scanCanvas.width,scanCanvas.height);
+  drawVideoCover();
+
+  scanCtx.lineWidth = 4;
+  scanCtx.strokeStyle = '#FFCD00';
+  scanCtx.strokeRect(a4Rect.x, a4Rect.y, a4Rect.width, a4Rect.height);
+
+  scanCtx.strokeStyle = '#1f9d55';
+  scanCtx.lineWidth = 4;
+  scanCtx.strokeRect(objRect.x, objRect.y, objRect.width, objRect.height);
+
+  const sizeText = `≈ ${objW.toFixed(1)} × ${objH.toFixed(1)} см`;
+
+  scanCtx.font = 'bold 18px system-ui';
+  const textWidth = scanCtx.measureText(sizeText).width;
+
+  const badgeW = textWidth + 28;
+  const badgeH = 38;
+  const badgeX = objRect.x + objRect.width / 2 - badgeW / 2;
+  const badgeY = objRect.y + objRect.height / 2 - badgeH / 2;
+
+  scanCtx.fillStyle = 'rgba(17,17,17,.78)';
+  roundRect(scanCtx, badgeX, badgeY, badgeW, badgeH, 18);
+  scanCtx.fill();
+
+  scanCtx.strokeStyle = 'rgba(255,255,255,.35)';
+  scanCtx.lineWidth = 1;
+  roundRect(scanCtx, badgeX, badgeY, badgeW, badgeH, 18);
+  scanCtx.stroke();
+
+  scanCtx.fillStyle = '#fff';
+  scanCtx.fillText(sizeText, badgeX + 14, badgeY + 25);
+}
+
+function animateScan(){
+  const {a4Rect, objRect} = detectedScan;
+  if(!objRect) return;
+
+  app.classList.add('scanning');
+  floatingScanBtn.classList.remove('visible');
+
+  scanAnimation.active = true;
+  scanAnimation.progress = 0;
+
+  $('#scanStatus').textContent = 'Сканирую предмет...';
+
+  function frame(){
+    if(!scanAnimation.active) return;
+
+    scanCtx.clearRect(0,0,scanCanvas.width,scanCanvas.height);
+    drawVideoCover();
+
+    scanCtx.lineWidth = 4;
+    scanCtx.strokeStyle = '#FFCD00';
+    scanCtx.strokeRect(a4Rect.x, a4Rect.y, a4Rect.width, a4Rect.height);
+
+    scanCtx.strokeStyle = 'rgba(31,157,85,.95)';
+    scanCtx.lineWidth = 4;
+    scanCtx.strokeRect(objRect.x, objRect.y, objRect.width, objRect.height);
+
+    const y = objRect.y + objRect.height * scanAnimation.progress;
+
+    const gradient = scanCtx.createLinearGradient(0, y - 30, 0, y + 30);
+    gradient.addColorStop(0, 'rgba(31,157,85,0)');
+    gradient.addColorStop(.5, 'rgba(31,157,85,.9)');
+    gradient.addColorStop(1, 'rgba(31,157,85,0)');
+
+    scanCtx.fillStyle = gradient;
+    scanCtx.fillRect(objRect.x, y - 30, objRect.width, 60);
+
+    scanCtx.strokeStyle = '#1f9d55';
+    scanCtx.lineWidth = 3;
+    scanCtx.beginPath();
+    scanCtx.moveTo(objRect.x, y);
+    scanCtx.lineTo(objRect.x + objRect.width, y);
+    scanCtx.stroke();
+
+    scanAnimation.progress += 0.025;
+
+    if(scanAnimation.progress <= 1){
+      requestAnimationFrame(frame);
+    }else{
+      scanAnimation.active = false;
+      app.classList.remove('scanning');
+
+      els.objW.value = detectedScan.objW.toFixed(1);
+      els.objH.value = detectedScan.objH.toFixed(1);
+
+      drawScanResult();
+
+      $('#scanStatus').textContent = `Размер предмета: ${detectedScan.objW.toFixed(1)} × ${detectedScan.objH.toFixed(1)} см.`;
+      check(true);
+      navigator.vibrate?.(50);
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+let detectTimer = null;
+
+function startLiveDetection(){
+  if(detectTimer) clearInterval(detectTimer);
+
+  detectTimer = setInterval(() => {
+    if(scanAnimation.active) return;
+    if(app.classList.contains('panel-open')) return;
+    detectA4AndObject(true);
+  }, 1200);
+}
+
+floatingScanBtn.onclick = () => {
+  if(!detectedScan.objRect){
+    const found = detectA4AndObject(false);
+    if(!found) return;
+  }
+
+  animateScan();
+};
 startCamera();
 update();
+setTimeout(startLiveDetection, 1500);
 </script>
 </body>
 </html>
