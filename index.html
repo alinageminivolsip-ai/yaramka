@@ -26,6 +26,92 @@
     .rulers{position:absolute;inset:0;pointer-events:none}.ruler-x,.ruler-y{position:absolute;background:rgba(255,255,255,.92)}.ruler-x{height:2px;left:0;right:0;bottom:-18px}.ruler-y{width:2px;top:0;bottom:0;right:-18px}.ruler-x:after,.ruler-y:after{position:absolute;font-size:12px;background:rgba(17,17,17,.72);border-radius:999px;padding:4px 8px}.ruler-x:after{content:attr(data-text);left:50%;top:6px;transform:translateX(-50%)}.ruler-y:after{content:attr(data-text);left:6px;top:50%;transform:translateY(-50%);white-space:nowrap}
     .topbar{position:absolute;left:14px;right:14px;top:calc(env(safe-area-inset-top) + 12px);display:flex;gap:8px;align-items:center;justify-content:space-between}.brand{background:rgba(246,244,239,.92);color:var(--graphite);border-radius:18px;padding:10px 14px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.22)}.pill{border:0;border-radius:999px;padding:10px 12px;background:rgba(255,255,255,.18);color:white;backdrop-filter:blur(16px)}
     .panel{position:relative;z-index:5;background:rgba(246,244,239,.96);color:var(--graphite);border-radius:28px 28px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -16px 40px rgba(0,0,0,.26);max-height:52vh;overflow:auto}.handle{width:44px;height:5px;border-radius:999px;background:var(--line);margin:0 auto 12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.field{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px 12px}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input,.field select{width:100%;border:0;outline:0;color:var(--graphite);background:transparent;font-weight:750}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.btn{border:0;border-radius:18px;padding:13px 14px;font-weight:850;color:var(--graphite);background:var(--yellow)}.btn.secondary{background:#fff;border:1px solid var(--line)}.result{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:20px;padding:12px;margin-top:10px}.dot{width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--warn)}.result.good .dot{background:var(--good)}.result.bad .dot{background:var(--bad)}.result b{display:block;margin-bottom:2px}.result small{color:#777;line-height:1.35}.hint{font-size:12px;line-height:1.35;color:#777;margin-top:8px}.hidden{display:none!important}.mode{font-size:12px;line-height:1.35;color:#fff;background:rgba(17,17,17,.62);backdrop-filter:blur(16px);position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:10px 12px;z-index:4}.panel-open .mode{display:none}
+    .a4-reminder{
+  position:absolute;
+  left:14px;
+  right:14px;
+  top:calc(env(safe-area-inset-top) + 70px);
+  z-index:6;
+  background:rgba(246,244,239,.94);
+  color:var(--graphite);
+  border:1px solid rgba(255,255,255,.45);
+  border-radius:22px;
+  padding:12px 42px 12px 14px;
+  box-shadow:0 12px 30px rgba(0,0,0,.22);
+  backdrop-filter:blur(18px);
+  font-size:13px;
+  line-height:1.35;
+}
+.a4-reminder b{display:block;margin-bottom:2px}
+.a4-reminder button{
+  position:absolute;
+  right:10px;
+  top:10px;
+  width:28px;
+  height:28px;
+  border:0;
+  border-radius:50%;
+  background:#fff;
+  color:var(--graphite);
+  font-weight:900;
+}
+
+.panel{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  transform:translateY(calc(100% - 78px));
+  transition:transform .28s ease;
+}
+.panel-open .panel{
+  transform:translateY(0);
+}
+
+.handle{
+  cursor:grab;
+}
+
+.a4-box{
+  position:absolute;
+  left:50%;
+  top:48%;
+  width:210px;
+  height:297px;
+  transform:translate(-50%,-50%) rotate(var(--a4rot,0deg));
+  border:3px solid rgba(255,255,255,.95);
+  border-radius:6px;
+  box-shadow:0 0 0 2px rgba(255,205,0,.85), 0 18px 34px rgba(0,0,0,.28);
+  background:rgba(255,255,255,.08);
+  z-index:3;
+  touch-action:none;
+}
+.a4-box:before{
+  content:"Лист А4";
+  position:absolute;
+  left:50%;
+  top:-38px;
+  transform:translateX(-50%);
+  background:rgba(17,17,17,.72);
+  color:#fff;
+  border-radius:999px;
+  padding:7px 11px;
+  font-size:12px;
+  white-space:nowrap;
+}
+.a4-box:after{
+  content:"21 × 29,7 см";
+  position:absolute;
+  left:50%;
+  bottom:-38px;
+  transform:translateX(-50%);
+  background:rgba(17,17,17,.72);
+  color:#fff;
+  border-radius:999px;
+  padding:7px 11px;
+  font-size:12px;
+  white-space:nowrap;
+}
   </style>
 </head>
 <body>
@@ -34,6 +120,13 @@
       <video id="camera" autoplay playsinline muted></video>
       <div class="grid"></div>
       <div class="topbar"><div class="brand">FrameFit AR</div><button class="pill" id="togglePanel">Настройки</button></div>
+      <div class="a4-reminder" id="a4Reminder">
+  <b>Положите рядом лист А4</b>
+  Камера использует лист как эталон размера. Совместите белую рамку с настоящим листом, потом нажмите «Калибровать по А4».
+  <button id="hideReminder" type="button">×</button>
+</div>
+
+<div class="a4-box" id="a4Box"></div>
       <div class="frame-wrap" id="frameWrap" style="--rot:0deg;--depth:46px">
         <div class="label" id="frameLabel">30×40 см, глубина 5 см</div>
         <div class="frame"><div class="inner"></div></div>
@@ -56,9 +149,19 @@
         <div class="field"><label>Глубина объекта, см</label><input id="objD" type="number" value="4" step="0.1"></div>
       </div>
       <div class="field"><label>Быстрая настройка масштаба</label><input id="scaleRange" type="range" min="3" max="18" step="0.2" value="8"></div>
-      <div class="actions"><button class="btn" id="fitBtn">Проверить</button><button class="btn secondary" id="shotBtn">Снимок</button></div>
+      <div class="actions">
+  <button class="btn" id="calibrateBtn">Калибровать по А4</button>
+  <button class="btn secondary" id="fitBtn">Проверить</button>
+</div>
+
+<div class="actions">
+  <button class="btn secondary" id="toggleA4Btn">Скрыть А4</button>
+  <button class="btn secondary" id="shotBtn">Снимок</button>
+</div>
       <div class="result" id="result"><span class="dot"></span><div><b>Проверьте посадку объекта</b><small>Выберите рамку, наведите камеру на объект и сравните его размер с внутренним полем рамки.</small></div></div>
-      <div class="hint">Для точнее примерки положите рядом лист А4 или линейку и подберите масштаб так, чтобы виртуальная ширина совпала с реальной. Потом наведите рамку на объект.</div>
+      <div class="hint">
+  Положите рядом с предметом лист А4. Подгоните белую рамку под лист пальцами и нажмите «Калибровать по А4». После этого рамки будут отображаться в правильном масштабе.
+</div>
     </section>
   </div>
 <script>
