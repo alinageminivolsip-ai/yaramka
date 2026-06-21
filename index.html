@@ -25,7 +25,7 @@
     .label{position:absolute;left:50%;top:-42px;transform:translateX(-50%);background:rgba(17,17,17,.72);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 12px;font-size:13px;white-space:nowrap}
     .rulers{position:absolute;inset:0;pointer-events:none}.ruler-x,.ruler-y{position:absolute;background:rgba(255,255,255,.92)}.ruler-x{height:2px;left:0;right:0;bottom:-18px}.ruler-y{width:2px;top:0;bottom:0;right:-18px}.ruler-x:after,.ruler-y:after{position:absolute;font-size:12px;background:rgba(17,17,17,.72);border-radius:999px;padding:4px 8px}.ruler-x:after{content:attr(data-text);left:50%;top:6px;transform:translateX(-50%)}.ruler-y:after{content:attr(data-text);left:6px;top:50%;transform:translateY(-50%);white-space:nowrap}
     .topbar{position:absolute;left:14px;right:14px;top:calc(env(safe-area-inset-top) + 12px);display:flex;gap:8px;align-items:center;justify-content:space-between}.brand{background:rgba(246,244,239,.92);color:var(--graphite);border-radius:18px;padding:10px 14px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.22)}.pill{border:0;border-radius:999px;padding:10px 12px;background:rgba(255,255,255,.18);color:white;backdrop-filter:blur(16px)}
-    .panel{position:relative;z-index:5;background:rgba(246,244,239,.96);color:var(--graphite);border-radius:28px 28px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -16px 40px rgba(0,0,0,.26);max-height:52vh;overflow:auto}.handle{width:44px;height:5px;border-radius:999px;background:var(--line);margin:0 auto 12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.field{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px 12px}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input,.field select{width:100%;border:0;outline:0;color:var(--graphite);background:transparent;font-weight:750}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.btn{border:0;border-radius:18px;padding:13px 14px;font-weight:850;color:var(--graphite);background:var(--yellow)}.btn.secondary{background:#fff;border:1px solid var(--line)}.result{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:20px;padding:12px;margin-top:10px}.dot{width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--warn)}.result.good .dot{background:var(--good)}.result.bad .dot{background:var(--bad)}.result b{display:block;margin-bottom:2px}.result small{color:#777;line-height:1.35}.hint{font-size:12px;line-height:1.35;color:#777;margin-top:8px}.hidden{display:none!important}.mode{font-size:12px;line-height:1.35;color:#fff;background:rgba(17,17,17,.62);backdrop-filter:blur(16px);position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:10px 12px;z-index:4}.panel-open .mode{display:none}
+    .handle{width:44px;height:5px;border-radius:999px;background:var(--line);margin:0 auto 12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.field{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px 12px}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input,.field select{width:100%;border:0;outline:0;color:var(--graphite);background:transparent;font-weight:750}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.btn{border:0;border-radius:18px;padding:13px 14px;font-weight:850;color:var(--graphite);background:var(--yellow)}.btn.secondary{background:#fff;border:1px solid var(--line)}.result{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:20px;padding:12px;margin-top:10px}.dot{width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--warn)}.result.good .dot{background:var(--good)}.result.bad .dot{background:var(--bad)}.result b{display:block;margin-bottom:2px}.result small{color:#777;line-height:1.35}.hint{font-size:12px;line-height:1.35;color:#777;margin-top:8px}.hidden{display:none!important}.mode{font-size:12px;line-height:1.35;color:#fff;background:rgba(17,17,17,.62);backdrop-filter:blur(16px);position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:10px 12px;z-index:4}.panel-open .mode{display:none}
     .a4-reminder{
   position:absolute;
   left:14px;
@@ -61,15 +61,36 @@
   left:0;
   right:0;
   bottom:0;
-  transform:translateY(calc(100% - 78px));
+  z-index:5;
+  background:rgba(246,244,239,.96);
+  color:var(--graphite);
+  border-radius:28px 28px 0 0;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow:0 -16px 40px rgba(0,0,0,.26);
+  max-height:72vh;
+  overflow:auto;
+  transform:translateY(calc(100% - 92px));
   transition:transform .28s ease;
+  touch-action:none;
+  will-change:transform;
 }
+
 .panel-open .panel{
   transform:translateY(0);
 }
 
+.panel.dragging{
+  transition:none;
+}
+
 .handle{
+  width:54px;
+  height:6px;
+  border-radius:999px;
+  background:#d8d3c8;
+  margin:0 auto 14px;
   cursor:grab;
+  touch-action:none;
 }
 
 .a4-box{
@@ -165,19 +186,302 @@
     </section>
   </div>
 <script>
-const $=s=>document.querySelector(s);const video=$('#camera'),wrap=$('#frameWrap'),app=$('#app');
-const els={preset:$('#preset'),scale:$('#scale'),scaleRange:$('#scaleRange'),w:$('#w'),h:$('#h'),d:$('#d'),objD:$('#objD'),label:$('#frameLabel'),rx:$('#rx'),ry:$('#ry'),result:$('#result')};
-let state={x:innerWidth/2,y:innerHeight*.43,rot:0,drag:false,dx:0,dy:0};
-async function startCamera(){try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});video.srcObject=stream;}catch(e){$('#modeText').textContent='Камера не запустилась. Откройте страницу через HTTPS и разрешите доступ к камере.'}}
-function update(){let w=+els.w.value,h=+els.h.value,d=+els.d.value,scale=+els.scale.value;wrap.style.width=(w*scale)+'px';wrap.style.height=(h*scale)+'px';wrap.style.left=state.x+'px';wrap.style.top=state.y+'px';wrap.style.setProperty('--rot',state.rot+'deg');wrap.style.setProperty('--depth',Math.max(18,d*scale*1.15)+'px');els.label.textContent=`${w}×${h} см, глубина ${d} см`;els.rx.dataset.text=w+' см';els.ry.dataset.text=h+' см';check(false)}
-function check(show=true){let d=+els.d.value,obj=+els.objD.value,res=els.result;res.className='result';let reserve=d-obj;if(isNaN(reserve)){return}let title='Нужно проверить размеры',txt='Введите глубину объекта, чтобы понять, подойдет ли глубокая рамка.';if(reserve>=1){res.classList.add('good');title='Подходит';txt=`Запас по глубине примерно ${reserve.toFixed(1)} см. Можно рекомендовать эту рамку.`}else if(reserve>=0){title='Впритык';txt=`Запас всего ${reserve.toFixed(1)} см. Лучше взять рамку глубже, чтобы объект не упирался в стекло.`}else{res.classList.add('bad');title='Не подходит';txt=`Объект глубже рамки на ${Math.abs(reserve).toFixed(1)} см. Нужна рамка большей глубины.`}res.querySelector('b').textContent=title;res.querySelector('small').textContent=txt;if(show)navigator.vibrate?.(25)}
-['input','change'].forEach(ev=>['scale','scaleRange','w','h','d','objD'].forEach(id=>els[id].addEventListener(ev,e=>{if(id==='scale')els.scaleRange.value=els.scale.value;if(id==='scaleRange')els.scale.value=els.scaleRange.value; if(id!=='preset') els.preset.value='custom'; update()})));
-els.preset.addEventListener('change',()=>{if(els.preset.value==='custom')return;let [w,h,d]=els.preset.value.split(',');els.w.value=w;els.h.value=h;els.d.value=d;update()});
-$('#fitBtn').onclick=()=>check(true);$('#togglePanel').onclick=()=>app.classList.toggle('panel-open');$('#shotBtn').onclick=()=>alert('В прототипе снимок можно сделать стандартным скриншотом телефона. В следующей версии добавим сохранение фото с наложенной рамкой.');
-wrap.addEventListener('pointerdown',e=>{state.drag=true;wrap.setPointerCapture(e.pointerId);state.dx=e.clientX-state.x;state.dy=e.clientY-state.y});wrap.addEventListener('pointermove',e=>{if(!state.drag)return;state.x=e.clientX-state.dx;state.y=e.clientY-state.dy;update()});wrap.addEventListener('pointerup',()=>state.drag=false);
-document.addEventListener('keydown',e=>{if(e.key==='q')state.rot-=2;if(e.key==='e')state.rot+=2;update()});
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
-startCamera();update();
+const $ = s => document.querySelector(s);
+
+const video = $('#camera');
+const wrap = $('#frameWrap');
+const app = $('#app');
+const a4Box = $('#a4Box');
+const panel = $('#panel');
+const handle = panel.querySelector('.handle');
+
+const els = {
+  preset: $('#preset'),
+  scale: $('#scale'),
+  scaleRange: $('#scaleRange'),
+  w: $('#w'),
+  h: $('#h'),
+  d: $('#d'),
+  objD: $('#objD'),
+  label: $('#frameLabel'),
+  rx: $('#rx'),
+  ry: $('#ry'),
+  result: $('#result')
+};
+
+let state = {
+  x: innerWidth / 2,
+  y: innerHeight * .43,
+  rot: 0,
+  drag: false,
+  dx: 0,
+  dy: 0
+};
+
+let a4 = {
+  x: innerWidth / 2,
+  y: innerHeight * .48,
+  w: 210,
+  h: 297,
+  drag: false,
+  dx: 0,
+  dy: 0,
+  visible: true
+};
+
+let sheet = {
+  dragging: false,
+  startY: 0,
+  panelHeight: 0,
+  collapsed: 92
+};
+
+async function startCamera(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:{ideal:'environment'},
+        width:{ideal:1920},
+        height:{ideal:1080}
+      },
+      audio:false
+    });
+    video.srcObject = stream;
+  }catch(e){
+    $('#modeText').textContent = 'Камера не запустилась. Откройте страницу через HTTPS и разрешите доступ к камере.';
+  }
+}
+
+function openPanel(){
+  app.classList.add('panel-open');
+  panel.style.transform = '';
+}
+
+function closePanel(){
+  app.classList.remove('panel-open');
+  panel.style.transform = '';
+}
+
+function update(){
+  let w = +els.w.value;
+  let h = +els.h.value;
+  let d = +els.d.value;
+  let scale = +els.scale.value;
+
+  wrap.style.width = (w * scale) + 'px';
+  wrap.style.height = (h * scale) + 'px';
+  wrap.style.left = state.x + 'px';
+  wrap.style.top = state.y + 'px';
+  wrap.style.setProperty('--rot', state.rot + 'deg');
+  wrap.style.setProperty('--depth', Math.max(18, d * scale * 1.15) + 'px');
+
+  els.label.textContent = `${w}×${h} см, глубина ${d} см`;
+  els.rx.dataset.text = w + ' см';
+  els.ry.dataset.text = h + ' см';
+
+  updateA4();
+  check(false);
+}
+
+function updateA4(){
+  a4Box.style.left = a4.x + 'px';
+  a4Box.style.top = a4.y + 'px';
+  a4Box.style.width = a4.w + 'px';
+  a4Box.style.height = a4.h + 'px';
+  a4Box.classList.toggle('hidden', !a4.visible);
+}
+
+function check(show = true){
+  let d = +els.d.value;
+  let obj = +els.objD.value;
+  let res = els.result;
+
+  res.className = 'result';
+
+  let reserve = d - obj;
+  if(isNaN(reserve)) return;
+
+  let title = 'Нужно проверить размеры';
+  let txt = 'Введите глубину объекта, чтобы понять, подойдет ли глубокая рамка.';
+
+  if(reserve >= 1){
+    res.classList.add('good');
+    title = 'Подходит';
+    txt = `Запас по глубине примерно ${reserve.toFixed(1)} см. Можно рекомендовать эту рамку.`;
+  }else if(reserve >= 0){
+    title = 'Впритык';
+    txt = `Запас всего ${reserve.toFixed(1)} см. Лучше взять рамку глубже, чтобы объект не упирался в стекло.`;
+  }else{
+    res.classList.add('bad');
+    title = 'Не подходит';
+    txt = `Объект глубже рамки на ${Math.abs(reserve).toFixed(1)} см. Нужна рамка большей глубины.`;
+  }
+
+  res.querySelector('b').textContent = title;
+  res.querySelector('small').textContent = txt;
+
+  if(show) navigator.vibrate?.(25);
+}
+
+function calibrateByA4(){
+  const scaleByWidth = a4.w / 21;
+  const scaleByHeight = a4.h / 29.7;
+  const newScale = ((scaleByWidth + scaleByHeight) / 2).toFixed(2);
+
+  els.scale.value = newScale;
+  els.scaleRange.value = Math.max(3, Math.min(18, newScale));
+
+  update();
+
+  $('#modeText').textContent = `Масштаб рассчитан по листу А4: ${newScale} px на 1 см. Теперь наведите рамку на объект.`;
+  navigator.vibrate?.(40);
+}
+
+['input','change'].forEach(ev => {
+  ['scale','scaleRange','w','h','d','objD'].forEach(id => {
+    els[id].addEventListener(ev, () => {
+      if(id === 'scale') els.scaleRange.value = els.scale.value;
+      if(id === 'scaleRange') els.scale.value = els.scaleRange.value;
+      if(id !== 'preset') els.preset.value = 'custom';
+      update();
+    });
+  });
+});
+
+els.preset.addEventListener('change', () => {
+  if(els.preset.value === 'custom') return;
+
+  let [w,h,d] = els.preset.value.split(',');
+
+  els.w.value = w;
+  els.h.value = h;
+  els.d.value = d;
+
+  update();
+});
+
+$('#fitBtn').onclick = () => check(true);
+
+$('#togglePanel').onclick = () => {
+  if(app.classList.contains('panel-open')){
+    closePanel();
+  }else{
+    openPanel();
+  }
+};
+
+$('#shotBtn').onclick = () => {
+  alert('В прототипе снимок можно сделать стандартным скриншотом телефона.');
+};
+
+$('#hideReminder').onclick = () => {
+  $('#a4Reminder').classList.add('hidden');
+};
+
+$('#calibrateBtn').onclick = () => {
+  calibrateByA4();
+};
+
+$('#toggleA4Btn').onclick = () => {
+  a4.visible = !a4.visible;
+  $('#toggleA4Btn').textContent = a4.visible ? 'Скрыть А4' : 'Показать А4';
+  updateA4();
+};
+
+wrap.addEventListener('pointerdown', e => {
+  state.drag = true;
+  wrap.setPointerCapture(e.pointerId);
+  state.dx = e.clientX - state.x;
+  state.dy = e.clientY - state.y;
+});
+
+wrap.addEventListener('pointermove', e => {
+  if(!state.drag) return;
+  state.x = e.clientX - state.dx;
+  state.y = e.clientY - state.dy;
+  update();
+});
+
+wrap.addEventListener('pointerup', () => {
+  state.drag = false;
+});
+
+a4Box.addEventListener('pointerdown', e => {
+  a4.drag = true;
+  a4Box.setPointerCapture(e.pointerId);
+  a4.dx = e.clientX - a4.x;
+  a4.dy = e.clientY - a4.y;
+});
+
+a4Box.addEventListener('pointermove', e => {
+  if(!a4.drag) return;
+  a4.x = e.clientX - a4.dx;
+  a4.y = e.clientY - a4.dy;
+  updateA4();
+});
+
+a4Box.addEventListener('pointerup', () => {
+  a4.drag = false;
+});
+
+function startSheetDrag(e){
+  sheet.dragging = true;
+  sheet.startY = e.clientY;
+  sheet.panelHeight = panel.offsetHeight;
+  panel.classList.add('dragging');
+  handle.setPointerCapture?.(e.pointerId);
+}
+
+function moveSheetDrag(e){
+  if(!sheet.dragging) return;
+
+  const diff = e.clientY - sheet.startY;
+  const isOpen = app.classList.contains('panel-open');
+
+  let translate;
+
+  if(isOpen){
+    translate = Math.max(0, diff);
+  }else{
+    translate = Math.max(0, sheet.panelHeight - sheet.collapsed + diff);
+  }
+
+  translate = Math.min(translate, sheet.panelHeight - sheet.collapsed);
+  panel.style.transform = `translateY(${translate}px)`;
+}
+
+function endSheetDrag(e){
+  if(!sheet.dragging) return;
+
+  sheet.dragging = false;
+  panel.classList.remove('dragging');
+
+  const diff = e.clientY - sheet.startY;
+
+  if(app.classList.contains('panel-open')){
+    diff > 70 ? closePanel() : openPanel();
+  }else{
+    diff < -70 ? openPanel() : closePanel();
+  }
+}
+
+handle.addEventListener('pointerdown', startSheetDrag);
+handle.addEventListener('pointermove', moveSheetDrag);
+handle.addEventListener('pointerup', endSheetDrag);
+handle.addEventListener('pointercancel', endSheetDrag);
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'q') state.rot -= 2;
+  if(e.key === 'e') state.rot += 2;
+  update();
+});
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js');
+}
+
+startCamera();
+update();
 </script>
 </body>
 </html>
