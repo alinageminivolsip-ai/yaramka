@@ -27,9 +27,17 @@
     <section class="question" id="questionScreen"><div class="card" style="width:100%"><h2 id="questionTitle">Ширина предмета</h2><p class="lead" id="questionText"></p><div id="numberInputWrap" class="field-big"><input id="answerInput" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0"/><div class="unit">см</div></div><div id="presetWrap" class="presets"></div><div class="custom-grid" id="customGrid"><input id="customW" type="number" placeholder="Ширина" step="0.1"><input id="customH" type="number" placeholder="Высота" step="0.1"><input id="customD" type="number" placeholder="Глубина" step="0.1"></div><div class="bottom-actions"><button class="btn" id="backBtn">Назад</button><button class="btn primary" id="nextBtn">Далее</button></div></div></section>
     <section class="result-screen" id="resultScreen"><div class="result-header"><div class="badge warn" id="resultBadge">Расчет</div><div class="result-title" id="resultTitle">Проверяем посадку</div><p class="lead" id="resultText"></p><div class="metrics"><div class="metric"><span>Предмет</span><b id="objectMetric">—</b></div><div class="metric"><span>Рамка</span><b id="frameMetric">—</b></div><div class="metric"><span>Запас</span><b id="marginMetric">—</b></div></div><div class="bottom-actions"><button class="btn" id="restartBtn">Заново</button><button class="btn primary" id="editBtn">Изменить</button></div></div><div class="viewer"><div id="viewer3d"></div><div class="viewer-note"><b>Покрути рамку пальцем.</b> Цветная область показывает размер предмета внутри рамки.</div></div></section>
   </div></main>
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 <script type="module">
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const qs=id=>document.getElementById(id); const startScreen=qs('startScreen'),questionScreen=qs('questionScreen'),resultScreen=qs('resultScreen'),stepPill=qs('stepPill'),questionTitle=qs('questionTitle'),questionText=qs('questionText'),numberInputWrap=qs('numberInputWrap'),answerInput=qs('answerInput'),presetWrap=qs('presetWrap'),customGrid=qs('customGrid'),customW=qs('customW'),customH=qs('customH'),customD=qs('customD'),resultBadge=qs('resultBadge'),resultTitle=qs('resultTitle'),resultText=qs('resultText'),objectMetric=qs('objectMetric'),frameMetric=qs('frameMetric'),marginMetric=qs('marginMetric');
 const presets=[{label:'15 × 20 × 3 см',w:15,h:20,d:3},{label:'21 × 30 × 4 см',w:21,h:30,d:4},{label:'30 × 40 × 5 см',w:30,h:40,d:5},{label:'40 × 50 × 6 см',w:40,h:50,d:6},{label:'Свой размер',custom:true}];
 const steps=[{key:'objW',title:'Какая ширина предмета?',text:'Укажи максимальную ширину предмета в сантиметрах.',placeholder:'Например 18'},{key:'objH',title:'Какая высота предмета?',text:'Укажи максимальную высоту предмета в сантиметрах.',placeholder:'Например 24'},{key:'objD',title:'Какая глубина предмета?',text:'Измерь самую выступающую часть. Это важно для глубоких рамок.',placeholder:'Например 3.5'},{key:'frame',title:'Какую рамку проверяем?',text:'Выбери размер рамки или введи свой.',presets:true}];
