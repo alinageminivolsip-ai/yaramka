@@ -372,9 +372,6 @@
       Лист А4<br>21 × 29,7 см
     </div>
 
-    <button class="scan-button" id="scanBtn">Сканировать предмет</button>
-    <div class="floating-result" id="floatingResult">≈ 0 × 0 см</div>
-
     <section class="panel" id="panel">
       <div class="handle"></div>
 
@@ -428,7 +425,16 @@
             <input id="objectD" type="number" value="2" min="0.1" step="0.1" />
           </div>
         </div>
-
+<div class="row">
+  <div>
+    <div class="label">Ширина предмета, см</div>
+    <input id="objectW" type="number" value="10" min="0.1" step="0.1" />
+  </div>
+  <div>
+    <div class="label">Высота</div>
+    <input id="objectH" type="number" value="15" min="0.1" step="0.1" />
+  </div>
+</div>
         <div>
           <div class="label">Масштаб, пикселей на 1 см</div>
           <input id="scale" type="range" min="8" max="45" value="20" />
@@ -454,8 +460,8 @@
     const ctx = canvas.getContext('2d');
 
     const panel = document.getElementById('panel');
-    const scanBtn = document.getElementById('scanBtn');
-    const floatingResult = document.getElementById('floatingResult');
+const objectW = document.getElementById('objectW');
+const objectH = document.getElementById('objectH');
     const a4Frame = document.getElementById('a4Frame');
     const hint = document.getElementById('hint');
 
@@ -534,24 +540,6 @@
       frameSizeEl.textContent = `${app.frame.w} × ${app.frame.h}`;
     }
 
-    function fakeDetectObject() {
-      const t = Date.now() / 1000;
-      const baseW = Math.min(window.innerWidth * 0.32, 210);
-      const baseH = Math.min(window.innerHeight * 0.18, 150);
-
-      app.object.w = baseW + Math.sin(t) * 8;
-      app.object.h = baseH + Math.cos(t * 0.8) * 6;
-      app.object.x = window.innerWidth / 2;
-      app.object.y = window.innerHeight / 2 - 30;
-
-      scanBtn.style.left = `${app.object.x}px`;
-      scanBtn.style.top = `${app.object.y + app.object.h / 2 + 48}px`;
-
-      if (!app.scanned && !app.scanning) {
-        scanBtn.classList.add('show');
-      }
-    }
-
     function drawGrid() {
       ctx.save();
       ctx.strokeStyle = 'rgba(255,255,255,.12)';
@@ -616,115 +604,113 @@
 
       ctx.restore();
     }
+function roundRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
 
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
     function drawObject() {
-      const { x, y, w, h } = app.object;
+  const s = getScale();
 
-      ctx.save();
+  const objW = Number(objectW.value || 0);
+  const objH = Number(objectH.value || 0);
 
-      if (app.scanning) {
-        ctx.strokeStyle = '#25C06D';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([12, 10]);
+  if (!objW || !objH) return;
 
-        const progress = (Date.now() % 1200) / 1200;
-        const scanY = y - h / 2 + h * progress;
+  const w = objW * s;
+  const h = objH * s;
 
-        ctx.strokeRect(x - w / 2, y - h / 2, w, h);
+  app.object.w = w;
+  app.object.h = h;
+  app.object.x = app.frame.x;
+  app.object.y = app.frame.y;
+  app.object.cmW = objW;
+  app.object.cmH = objH;
 
-        ctx.setLineDash([]);
-        ctx.strokeStyle = 'rgba(37,192,109,.95)';
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(x - w / 2, scanY);
-        ctx.lineTo(x + w / 2, scanY);
-        ctx.stroke();
+  ctx.save();
 
-        ctx.fillStyle = 'rgba(37,192,109,.18)';
-        ctx.fillRect(x - w / 2, y - h / 2, w, h * progress);
-      } else {
-        ctx.strokeStyle = app.scanned ? '#25C06D' : 'rgba(255,255,255,.85)';
-        ctx.lineWidth = 3;
-        ctx.setLineDash(app.scanned ? [] : [8, 8]);
-        ctx.strokeRect(x - w / 2, y - h / 2, w, h);
-      }
+  const fits = isObjectFits();
 
-      ctx.restore();
-    }
+  ctx.fillStyle = fits ? 'rgba(37,192,109,.18)' : 'rgba(229,72,77,.18)';
+  ctx.strokeStyle = fits ? '#25C06D' : '#E5484D';
+  ctx.lineWidth = 4;
 
-    function updateFloatingResult() {
-      if (!app.scanned) {
-        floatingResult.classList.remove('show');
-        return;
-      }
+  ctx.fillRect(app.object.x - w / 2, app.object.y - h / 2, w, h);
+  ctx.strokeRect(app.object.x - w / 2, app.object.y - h / 2, w, h);
 
-      floatingResult.classList.add('show');
-      floatingResult.style.left = `${app.object.x}px`;
-      floatingResult.style.top = `${app.object.y - app.object.h / 2 - 34}px`;
-      floatingResult.textContent = `≈ ${app.object.cmW.toFixed(1)} × ${app.object.cmH.toFixed(1)} см`;
-    }
+  const text = `${objW} × ${objH} см`;
+  ctx.font = '900 15px system-ui';
+  const tw = ctx.measureText(text).width;
+  const bx = app.object.x - tw / 2 - 12;
+  const by = app.object.y - 19;
 
-    function runScan() {
-      app.scanning = true;
-      app.scanned = false;
-      scanBtn.classList.remove('show');
-      floatingResult.classList.remove('show');
-      hint.textContent = 'Сканирую предмет… держи камеру ровно.';
+  ctx.fillStyle = 'rgba(255,255,255,.94)';
+  roundRect(ctx, bx, by, tw + 24, 38, 18);
+  ctx.fill();
 
-      setTimeout(() => {
-        const s = getScale();
+  ctx.fillStyle = 'var(--graphite)';
+  ctx.fillText(text, bx + 12, by + 24);
 
-        app.object.cmW = app.object.w / s;
-        app.object.cmH = app.object.h / s;
-
-        app.scanning = false;
-        app.scanned = true;
-
-        objectSizeEl.textContent = `${app.object.cmW.toFixed(1)} × ${app.object.cmH.toFixed(1)}`;
-        hint.textContent = 'Размер рассчитан примерно. Теперь можно проверить, подходит ли предмет в рамку.';
-
-        checkFit();
-      }, 1500);
-    }
+  ctx.restore();
+}
 
     function checkFit() {
-      if (!app.scanned) {
-        fitStatus.textContent = 'Не измерено';
-        fitStatus.className = 'status warn';
-        return;
-      }
+  updateFrameFromInputs();
 
-      updateFrameFromInputs();
+  const objW = Number(objectW.value || 0);
+  const objH = Number(objectH.value || 0);
+  const objD = Number(objectD.value || 0);
 
-      const objW = Math.min(app.object.cmW, app.object.cmH);
-      const objH = Math.max(app.object.cmW, app.object.cmH);
-      const frmW = Math.min(app.frame.w, app.frame.h);
-      const frmH = Math.max(app.frame.w, app.frame.h);
-      const depthOk = Number(objectD.value) <= app.frame.d;
+  if (!objW || !objH || !objD) {
+    fitStatus.textContent = 'Введите размер';
+    fitStatus.className = 'status warn';
+    objectSizeEl.textContent = '—';
+    return;
+  }
 
-      const marginW = frmW - objW;
-      const marginH = frmH - objH;
+  objectSizeEl.textContent = `${objW} × ${objH} × ${objD}`;
 
-      if (marginW >= 1 && marginH >= 1 && depthOk) {
-        fitStatus.textContent = 'Подходит';
-        fitStatus.className = 'status good';
-      } else if (marginW >= 0 && marginH >= 0 && depthOk) {
-        fitStatus.textContent = 'Впритык';
-        fitStatus.className = 'status warn';
-      } else {
-        fitStatus.textContent = 'Не подходит';
-        fitStatus.className = 'status bad';
-      }
-    }
+  const marginW = Number(frameW.value) - objW;
+  const marginH = Number(frameH.value) - objH;
+  const marginD = Number(frameD.value) - objD;
 
+  if (marginW >= 1 && marginH >= 1 && marginD >= 0.5) {
+    fitStatus.textContent = 'Подходит';
+    fitStatus.className = 'status good';
+    hint.textContent = `Подходит. Запас: ${marginW.toFixed(1)} см по ширине, ${marginH.toFixed(1)} см по высоте, ${marginD.toFixed(1)} см по глубине.`;
+  } else if (marginW >= 0 && marginH >= 0 && marginD >= 0) {
+    fitStatus.textContent = 'Впритык';
+    fitStatus.className = 'status warn';
+    hint.textContent = 'Помещается, но почти без запаса. Лучше выбрать рамку глубже или больше.';
+  } else {
+    fitStatus.textContent = 'Не подходит';
+    fitStatus.className = 'status bad';
+
+    const problems = [];
+
+    if (marginW < 0) problems.push(`ширина больше на ${Math.abs(marginW).toFixed(1)} см`);
+    if (marginH < 0) problems.push(`высота больше на ${Math.abs(marginH).toFixed(1)} см`);
+    if (marginD < 0) problems.push(`глубина больше на ${Math.abs(marginD).toFixed(1)} см`);
+
+    hint.textContent = `Не подходит: ${problems.join(', ')}.`;
+  }
+}
     function draw() {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-      fakeDetectObject();
-      drawGrid();
-      drawFrame();
-      drawObject();
-      updateFloatingResult();
+ drawGrid();
+drawFrame();
+drawObject();
 
       requestAnimationFrame(draw);
     }
@@ -737,18 +723,26 @@
       frameH.value = h;
       frameD.value = d;
       updateFrameFromInputs();
+      function isObjectFits() {
+  updateFrameFromInputs();
+
+  const objW = Number(objectW.value || 0);
+  const objH = Number(objectH.value || 0);
+  const objD = Number(objectD.value || 0);
+
+  const frmW = Number(frameW.value || 0);
+  const frmH = Number(frameH.value || 0);
+  const frmD = Number(frameD.value || 0);
+
+  return objW <= frmW && objH <= frmH && objD <= frmD;
+}
       checkFit();
     });
 
-    [frameW, frameH, frameD, objectD, scale].forEach(el => {
+   [frameW, frameH, frameD, objectW, objectH, objectD, scale].forEach(el => {
       el.addEventListener('input', () => {
         preset.value = 'custom';
         updateFrameFromInputs();
-        if (app.scanned) {
-          app.object.cmW = app.object.w / getScale();
-          app.object.cmH = app.object.h / getScale();
-          objectSizeEl.textContent = `${app.object.cmW.toFixed(1)} × ${app.object.cmH.toFixed(1)}`;
-        }
         checkFit();
       });
     });
@@ -760,8 +754,6 @@
     });
 
     checkBtn.addEventListener('click', checkFit);
-    scanBtn.addEventListener('click', runScan);
-
     shotBtn.addEventListener('click', () => {
       const shot = document.createElement('canvas');
       shot.width = canvas.width;
