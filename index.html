@@ -6,1057 +6,791 @@
   <meta name="theme-color" content="#FFCD00" />
   <link rel="manifest" href="manifest.json" />
   <title>FrameFit AR</title>
+
   <style>
-    :root{
-      --yellow:#FFCD00; --graphite:#504D4A; --gray:#A6A9AA; --soft:#F6F4EF; --line:#E9E5DC;
-      --good:#1f9d55; --warn:#d9822b; --bad:#c92a2a;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    :root {
+      --yellow: #FFCD00;
+      --graphite: #504D4A;
+      --gray: #A6A9AA;
+      --soft: #F6F4EF;
+      --line: #E9E5DC;
+      --green: #25C06D;
+      --red: #E5484D;
+      --orange: #F59E0B;
+      --black: #111111;
+      --white: #ffffff;
     }
-    *{box-sizing:border-box} html,body{margin:0;height:100%;background:#111;color:#fff;overflow:hidden}
-    button,input,select{font:inherit}
-    .app{position:fixed;inset:0;display:grid;grid-template-rows:1fr auto;background:#111}
-    #camera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#111}
-#scanCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
-.scan-status{
-  position:absolute;
-  left:14px;
-  right:14px;
-  bottom:calc(110px + env(safe-area-inset-bottom));
-  z-index:4;
-  background:rgba(17,17,17,.72);
-  color:#fff;
-  border-radius:18px;
-  padding:10px 12px;
-  font-size:13px;
-  backdrop-filter:blur(16px);
-}
-.panel-open .scan-status{display:none}
-    .stage{position:relative;overflow:hidden;background:#111;touch-action:none}
-    .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);background-size:40px 40px;opacity:.25;pointer-events:none}
-    .frame-wrap{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) rotate(var(--rot,0deg));width:260px;height:180px;touch-action:auto;
--webkit-overflow-scrolling:touch;
-pointer-events:auto;filter:drop-shadow(0 22px 28px rgba(0,0,0,.35))}
-    .frame{position:absolute;inset:0;border:18px solid var(--yellow);border-radius:8px;background:rgba(255,205,0,.04);box-shadow:inset 0 0 0 2px rgba(80,77,74,.5),0 0 0 2px rgba(255,255,255,.35)}
-    .frame:after{content:"";position:absolute;left:calc(100% + 16px);top:-18px;width:var(--depth,46px);height:calc(100% + 36px);background:linear-gradient(90deg,rgba(255,205,0,.85),rgba(80,77,74,.35));transform:skewY(35deg);transform-origin:left top;border-radius:0 8px 8px 0;opacity:.88}
-    .inner{position:absolute;inset:18px;border:2px dashed rgba(255,255,255,.78);border-radius:4px;background:rgba(255,255,255,.08)}
-    .label{position:absolute;left:50%;top:-42px;transform:translateX(-50%);background:rgba(17,17,17,.72);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 12px;font-size:13px;white-space:nowrap}
-    .rulers{position:absolute;inset:0;pointer-events:none}.ruler-x,.ruler-y{position:absolute;background:rgba(255,255,255,.92)}.ruler-x{height:2px;left:0;right:0;bottom:-18px}.ruler-y{width:2px;top:0;bottom:0;right:-18px}.ruler-x:after,.ruler-y:after{position:absolute;font-size:12px;background:rgba(17,17,17,.72);border-radius:999px;padding:4px 8px}.ruler-x:after{content:attr(data-text);left:50%;top:6px;transform:translateX(-50%)}.ruler-y:after{content:attr(data-text);left:6px;top:50%;transform:translateY(-50%);white-space:nowrap}
-    .topbar{position:absolute;left:14px;right:14px;top:calc(env(safe-area-inset-top) + 12px);display:flex;gap:8px;align-items:center;justify-content:space-between}.brand{background:rgba(246,244,239,.92);color:var(--graphite);border-radius:18px;padding:10px 14px;font-weight:800;box-shadow:0 10px 24px rgba(0,0,0,.22)}.pill{border:0;border-radius:999px;padding:10px 12px;background:rgba(255,255,255,.18);color:white;backdrop-filter:blur(16px)}
-    .handle{width:44px;height:5px;border-radius:999px;background:var(--line);margin:0 auto 12px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.field{background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px 12px}.field label{display:block;font-size:12px;color:#777;margin-bottom:5px}.field input,.field select{width:100%;border:0;outline:0;color:var(--graphite);background:transparent;font-weight:750}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.btn{border:0;border-radius:18px;padding:13px 14px;font-weight:850;color:var(--graphite);background:var(--yellow)}.btn.secondary{background:#fff;border:1px solid var(--line)}.result{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:20px;padding:12px;margin-top:10px}.dot{width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--warn)}.result.good .dot{background:var(--good)}.result.bad .dot{background:var(--bad)}.result b{display:block;margin-bottom:2px}.result small{color:#777;line-height:1.35}.hint{font-size:12px;line-height:1.35;color:#777;margin-top:8px}.hidden{display:none!important}.mode{font-size:12px;line-height:1.35;color:#fff;background:rgba(17,17,17,.62);backdrop-filter:blur(16px);position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:10px 12px;z-index:4}.panel-open .mode{display:none}
-    .a4-reminder{
-  position:absolute;
-  left:14px;
-  right:14px;
-  top:calc(env(safe-area-inset-top) + 70px);
-  z-index:6;
-  background:rgba(246,244,239,.94);
-  color:var(--graphite);
-  border:1px solid rgba(255,255,255,.45);
-  border-radius:22px;
-  padding:12px 42px 12px 14px;
-  box-shadow:0 12px 30px rgba(0,0,0,.22);
-  backdrop-filter:blur(18px);
-  font-size:13px;
-  line-height:1.35;
-}
-.a4-reminder b{display:block;margin-bottom:2px}
-.a4-reminder button{
-  position:absolute;
-  right:10px;
-  top:10px;
-  width:28px;
-  height:28px;
-  border:0;
-  border-radius:50%;
-  background:#fff;
-  color:var(--graphite);
-  font-weight:900;
-}
 
-.panel{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
-  z-index:5;
-  background:rgba(246,244,239,.96);
-  color:var(--graphite);
-  border-radius:28px 28px 0 0;
-  padding:16px 16px calc(16px + env(safe-area-inset-bottom));
-  box-shadow:0 -16px 40px rgba(0,0,0,.26);
-  max-height:72vh;
-  overflow:auto;
-  transform:translateY(calc(100% - 92px));
-  transition:transform .28s ease;
-  touch-action:none;
-  will-change:transform;
-}
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-.panel-open .panel{
-  transform:translateY(0);
-}
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: var(--white);
+    }
 
-.panel.dragging{
-  transition:none;
-}
+    body {
+      position: fixed;
+      inset: 0;
+    }
 
-.handle{
-  width:54px;
-  height:6px;
-  border-radius:999px;
-  background:#d8d3c8;
-  margin:0 auto 14px;
-  cursor:grab;
-  touch-action:none;
-}
+    .app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #111;
+    }
 
-.a4-box{
-  position:absolute;
-  left:50%;
-  top:48%;
-  width:210px;
-  height:297px;
-  transform:translate(-50%,-50%) rotate(var(--a4rot,0deg));
-  border:3px solid rgba(255,255,255,.95);
-  border-radius:6px;
-  box-shadow:0 0 0 2px rgba(255,205,0,.85), 0 18px 34px rgba(0,0,0,.28);
-  background:rgba(255,255,255,.08);
-  z-index:3;
-  touch-action:none;
-}
-.a4-box:before{
-  content:"Лист А4";
-  position:absolute;
-  left:50%;
-  top:-38px;
-  transform:translateX(-50%);
-  background:rgba(17,17,17,.72);
-  color:#fff;
-  border-radius:999px;
-  padding:7px 11px;
-  font-size:12px;
-  white-space:nowrap;
-}
-.a4-box:after{
-  content:"21 × 29,7 см";
-  position:absolute;
-  left:50%;
-  bottom:-38px;
-  transform:translateX(-50%);
-  background:rgba(17,17,17,.72);
-  color:#fff;
-  border-radius:999px;
-  padding:7px 11px;
-  font-size:12px;
-  white-space:nowrap;
-}
-button, input, select{
-  position:relative;
-  z-index:10;
-  pointer-events:auto;
-}
-.floating-scan-btn{
-  position:absolute;
-  z-index:7;
-  display:none;
-  border:0;
-  border-radius:999px;
-  padding:12px 16px;
-  background:var(--yellow);
-  color:var(--graphite);
-  font-weight:900;
-  box-shadow:0 14px 34px rgba(0,0,0,.32);
-  transform:translate(-50%, -50%);
-  white-space:nowrap;
-}
+    video, canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
-.floating-scan-btn.visible{
-  display:block;
-}
+    video {
+      transform: scaleX(-1);
+      background: #111;
+    }
 
-.scanning .floating-scan-btn{
-  display:none;
-}
-.panel-open .a4-reminder{
-  display:none;
-}
+    canvas {
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: absolute;
+      top: calc(env(safe-area-inset-top) + 14px);
+      left: 14px;
+      right: 14px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.9);
+      color: var(--graphite);
+      font-weight: 800;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+      backdrop-filter: blur(12px);
+    }
+
+    .pill {
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.45);
+      color: white;
+      font-size: 13px;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.15);
+    }
+
+    .hint {
+      position: absolute;
+      top: calc(env(safe-area-inset-top) + 74px);
+      left: 14px;
+      right: 14px;
+      z-index: 20;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255, 205, 0, .95);
+      color: #2d2a25;
+      font-size: 14px;
+      line-height: 1.35;
+      box-shadow: 0 12px 30px rgba(0,0,0,.2);
+    }
+
+    .scan-button {
+      position: absolute;
+      z-index: 30;
+      display: none;
+      border: 0;
+      border-radius: 999px;
+      background: var(--yellow);
+      color: #24221f;
+      font-weight: 800;
+      padding: 12px 16px;
+      box-shadow: 0 14px 35px rgba(0,0,0,.28);
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+    }
+
+    .scan-button.show {
+      display: block;
+    }
+
+    .floating-result {
+      position: absolute;
+      z-index: 25;
+      display: none;
+      transform: translate(-50%, -50%);
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.92);
+      color: var(--graphite);
+      font-weight: 800;
+      font-size: 14px;
+      box-shadow: 0 14px 35px rgba(0,0,0,.24);
+      backdrop-filter: blur(12px);
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .floating-result.show {
+      display: block;
+    }
+
+    .panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 40;
+      height: 42%;
+      min-height: 310px;
+      max-height: 560px;
+      background: rgba(246,244,239,.96);
+      color: var(--graphite);
+      border-radius: 28px 28px 0 0;
+      box-shadow: 0 -20px 60px rgba(0,0,0,.35);
+      padding: 12px 16px calc(env(safe-area-inset-bottom) + 16px);
+      transform: translateY(calc(100% - 86px));
+      transition: transform .28s ease;
+      backdrop-filter: blur(18px);
+    }
+
+    .panel.open {
+      transform: translateY(0);
+    }
+
+    .handle {
+      width: 54px;
+      height: 5px;
+      border-radius: 999px;
+      background: #c9c3b8;
+      margin: 0 auto 12px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .panel-title {
+      font-weight: 900;
+      font-size: 19px;
+    }
+
+    .status {
+      font-size: 13px;
+      font-weight: 800;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: white;
+      border: 1px solid var(--line);
+    }
+
+    .status.good { color: var(--green); }
+    .status.warn { color: var(--orange); }
+    .status.bad { color: var(--red); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 12px;
+      box-shadow: 0 8px 22px rgba(80,77,74,.08);
+    }
+
+    .label {
+      font-size: 12px;
+      color: #88827a;
+      margin-bottom: 6px;
+    }
+
+    .value {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--graphite);
+    }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+      overflow-y: auto;
+      max-height: calc(100% - 92px);
+      padding-bottom: 20px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 90px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select, input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--graphite);
+      border-radius: 14px;
+      padding: 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    .btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      background: var(--yellow);
+      color: #28241d;
+    }
+
+    .btn.dark {
+      background: var(--graphite);
+      color: white;
+    }
+
+    .btn.light {
+      background: white;
+      color: var(--graphite);
+      border: 1px solid var(--line);
+    }
+
+    .small-note {
+      font-size: 12px;
+      line-height: 1.35;
+      color: #8a857d;
+    }
+
+    .a4-frame {
+      position: absolute;
+      z-index: 10;
+      width: min(42vw, 190px);
+      aspect-ratio: 210 / 297;
+      left: 18px;
+      top: 145px;
+      border: 2px dashed rgba(255,255,255,.85);
+      border-radius: 10px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(3px);
+      pointer-events: none;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .a4-frame.show {
+      display: flex;
+    }
+
+    @media (min-width: 900px) {
+      .panel {
+        left: auto;
+        top: 14px;
+        right: 14px;
+        bottom: 14px;
+        width: 390px;
+        height: auto;
+        max-height: none;
+        border-radius: 28px;
+        transform: none;
+      }
+
+      .handle {
+        display: none;
+      }
+
+      .hint {
+        right: 430px;
+      }
+    }
   </style>
 </head>
-<body>
-  <div class="app panel-open" id="app">
-    <main class="stage" id="stage">
-      <video id="camera" autoplay playsinline muted></video>
-      <canvas id="scanCanvas"></canvas>
-      <button class="floating-scan-btn" id="floatingScanBtn" type="button">
-  Сканировать предмет
-</button>
-      <div class="grid"></div>
-      <div class="topbar"><div class="brand">FrameFit AR</div><button class="pill" id="togglePanel">Настройки</button></div>
-      <div class="a4-reminder" id="a4Reminder">
-  <b>Положите рядом лист А4</b>
-  Камера использует лист как эталон размера. Совместите белую рамку с настоящим листом, потом нажмите «Калибровать по А4».
-  <button id="hideReminder" type="button">×</button>
-</div>
 
-<div class="a4-box" id="a4Box"></div>
-      <div class="frame-wrap" id="frameWrap" style="--rot:0deg;--depth:46px">
-        <div class="label" id="frameLabel">30×40 см, глубина 5 см</div>
-        <div class="frame"><div class="inner"></div></div>
-        <div class="rulers"><div class="ruler-x" id="rx" data-text="30 см"></div><div class="ruler-y" id="ry" data-text="40 см"></div></div>
-      </div>
-     <div class="scan-status" id="scanStatus">
-  Положите лист А4 и предмет рядом. Нажмите «Сканировать размер».
-</div>
-      <div class="mode" id="modeText">Двигайте рамку пальцем. Масштаб меняется ползунком. Для проверки глубины приложите объект сбоку и сравните с желтой боковой гранью.</div>
-    </main>
+<body>
+  <main class="app">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="overlay"></canvas>
+
+    <div class="topbar">
+      <div class="brand">FrameFit AR</div>
+      <div class="pill" id="cameraStatus">Камера</div>
+    </div>
+
+    <div class="hint" id="hint">
+      Положи предмет в кадр. Лучше рядом с листом А4, так размер будет точнее.
+    </div>
+
+    <div class="a4-frame" id="a4Frame">
+      Лист А4<br>21 × 29,7 см
+    </div>
+
+    <button class="scan-button" id="scanBtn">Сканировать предмет</button>
+    <div class="floating-result" id="floatingResult">≈ 0 × 0 см</div>
+
     <section class="panel" id="panel">
       <div class="handle"></div>
-      <div class="row">
-        <div class="field"><label>Размер рамки</label><select id="preset"><option value="15,20,3">15×20, глубина 3 см</option><option value="21,30,4">21×30, глубина 4 см</option><option value="30,40,5" selected>30×40, глубина 5 см</option><option value="40,50,6">40×50, глубина 6 см</option><option value="custom">Свой размер</option></select></div>
-        <div class="field"><label>Масштаб, px на 1 см</label><input id="scale" type="number" value="8" min="2" max="30" step="0.5"></div>
-      </div>
-      <div class="row">
-        <div class="field"><label>Ширина, см</label><input id="w" type="number" value="30" step="0.1"></div>
-        <div class="field"><label>Высота, см</label><input id="h" type="number" value="40" step="0.1"></div>
-      </div>
-      <div class="row">
-  <div class="field"><label>Ширина предмета, см</label><input id="objW" type="number" value="" step="0.1" placeholder="авто"></div>
-  <div class="field"><label>Высота предмета, см</label><input id="objH" type="number" value="" step="0.1" placeholder="авто"></div>
-</div>
-      <div class="row">
-        <div class="field"><label>Глубина рамки, см</label><input id="d" type="number" value="5" step="0.1"></div>
-        <div class="field"><label>Глубина объекта, см</label><input id="objD" type="number" value="4" step="0.1"></div>
-      </div>
-      <div class="field"><label>Быстрая настройка масштаба</label><input id="scaleRange" type="range" min="3" max="18" step="0.2" value="8"></div>
-      <div class="actions">
-  <button class="btn" id="scanBtn">Найти предмет</button>
-  <button class="btn secondary" id="fitBtn">Проверить</button>
-</div>
 
-<div class="actions">
-  <button class="btn secondary" id="toggleA4Btn">Скрыть А4</button>
-  <button class="btn secondary" id="shotBtn">Снимок</button>
-</div>
-      <div class="result" id="result"><span class="dot"></span><div><b>Проверьте посадку объекта</b><small>Выберите рамку, наведите камеру на объект и сравните его размер с внутренним полем рамки.</small></div></div>
-      <div class="hint">
-  Положите рядом с предметом лист А4. Подгоните белую рамку под лист пальцами и нажмите «Калибровать по А4». После этого рамки будут отображаться в правильном масштабе.
-</div>
+      <div class="panel-head">
+        <div class="panel-title">Настройки рамки</div>
+        <div class="status warn" id="fitStatus">Не измерено</div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="label">Предмет</div>
+          <div class="value" id="objectSize">—</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Рамка</div>
+          <div class="value" id="frameSize">21 × 30</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div>
+          <div class="label">Пресет рамки</div>
+          <select id="preset">
+            <option value="15,20,3">15 × 20 × 3 см</option>
+            <option value="21,30,4" selected>21 × 30 × 4 см</option>
+            <option value="30,40,5">30 × 40 × 5 см</option>
+            <option value="40,50,6">40 × 50 × 6 см</option>
+            <option value="custom">Свой размер</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div>
+            <div class="label">Ширина рамки, см</div>
+            <input id="frameW" type="number" value="21" min="1" step="0.5" />
+          </div>
+          <div>
+            <div class="label">Высота</div>
+            <input id="frameH" type="number" value="30" min="1" step="0.5" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <div class="label">Глубина рамки, см</div>
+            <input id="frameD" type="number" value="4" min="0.5" step="0.5" />
+          </div>
+          <div>
+            <div class="label">Глубина предмета</div>
+            <input id="objectD" type="number" value="2" min="0.1" step="0.1" />
+          </div>
+        </div>
+
+        <div>
+          <div class="label">Масштаб, пикселей на 1 см</div>
+          <input id="scale" type="range" min="8" max="45" value="20" />
+        </div>
+
+        <div class="btns">
+          <button class="btn primary" id="calibrateBtn">Показать А4</button>
+          <button class="btn dark" id="checkBtn">Проверить</button>
+        </div>
+
+        <button class="btn light" id="shotBtn">Сделать снимок</button>
+
+        <div class="small-note">
+          Это примерная примерка. Для точности положи рядом лист А4 и подгони масштаб так, чтобы экранная рамка совпадала с листом.
+        </div>
+      </div>
     </section>
-  </div>
-<script async src="https://docs.opencv.org/4.x/opencv.js" onload="cv['onRuntimeInitialized']=()=>{window.cvReady=true}"></script>
+  </main>
+
   <script>
-const $ = s => document.querySelector(s);
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('overlay');
+    const ctx = canvas.getContext('2d');
 
-const video = $('#camera');
-const wrap = $('#frameWrap');
-const app = $('#app');
-const a4Box = $('#a4Box');
-const panel = $('#panel');
-const handle = panel.querySelector('.handle');
-const scanCanvas = $('#scanCanvas');
-const scanCtx = scanCanvas.getContext('2d');
-const floatingScanBtn = $('#floatingScanBtn');
+    const panel = document.getElementById('panel');
+    const scanBtn = document.getElementById('scanBtn');
+    const floatingResult = document.getElementById('floatingResult');
+    const a4Frame = document.getElementById('a4Frame');
+    const hint = document.getElementById('hint');
 
-let detectedScan = {
-  a4Rect: null,
-  objRect: null,
-  objW: 0,
-  objH: 0,
-  pxPerCm: 0
-};
+    const cameraStatus = document.getElementById('cameraStatus');
+    const fitStatus = document.getElementById('fitStatus');
+    const objectSizeEl = document.getElementById('objectSize');
+    const frameSizeEl = document.getElementById('frameSize');
 
-let scanAnimation = {
-  active: false,
-  progress: 0
-};
-const els = {
-  preset: $('#preset'),
-  scale: $('#scale'),
-  scaleRange: $('#scaleRange'),
-  w: $('#w'),
-  h: $('#h'),
-  d: $('#d'),
-  objD: $('#objD'),
-  objW: $('#objW'),
-objH: $('#objH'),
-  label: $('#frameLabel'),
-  rx: $('#rx'),
-  ry: $('#ry'),
-  result: $('#result')
-};
+    const preset = document.getElementById('preset');
+    const frameW = document.getElementById('frameW');
+    const frameH = document.getElementById('frameH');
+    const frameD = document.getElementById('frameD');
+    const objectD = document.getElementById('objectD');
+    const scale = document.getElementById('scale');
 
-let state = {
-  x: innerWidth / 2,
-  y: innerHeight * .43,
-  rot: 0,
-  drag: false,
-  dx: 0,
-  dy: 0
-};
+    const calibrateBtn = document.getElementById('calibrateBtn');
+    const checkBtn = document.getElementById('checkBtn');
+    const shotBtn = document.getElementById('shotBtn');
 
-let a4 = {
-  x: innerWidth / 2,
-  y: innerHeight * .48,
-  w: 210,
-  h: 297,
-  drag: false,
-  dx: 0,
-  dy: 0,
-  visible: true
-};
-
-let sheet = {
-  dragging: false,
-  startY: 0,
-  panelHeight: 0,
-  collapsed: 92
-};
-
-async function startCamera(){
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video:{
-        facingMode:{ideal:'environment'},
-        width:{ideal:1920},
-        height:{ideal:1080}
+    let app = {
+      scanning: false,
+      scanned: false,
+      showA4: false,
+      object: {
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2,
+        w: 150,
+        h: 110,
+        cmW: 0,
+        cmH: 0
       },
-      audio:false
-    });
-    video.srcObject = stream;
-  }catch(e){
-    $('#modeText').textContent = 'Камера не запустилась. Откройте страницу через HTTPS и разрешите доступ к камере.';
-  }
-}
-
-function openPanel(){
-  app.classList.add('panel-open');
-  panel.style.transform = '';
-}
-
-function closePanel(){
-  app.classList.remove('panel-open');
-  panel.style.transform = '';
-}
-
-function update(){
-  let w = +els.w.value;
-  let h = +els.h.value;
-  let d = +els.d.value;
-  let scale = +els.scale.value;
-
-  wrap.style.width = (w * scale) + 'px';
-  wrap.style.height = (h * scale) + 'px';
-  wrap.style.left = state.x + 'px';
-  wrap.style.top = state.y + 'px';
-  wrap.style.setProperty('--rot', state.rot + 'deg');
-  wrap.style.setProperty('--depth', Math.max(18, d * scale * 1.15) + 'px');
-
-  els.label.textContent = `${w}×${h} см, глубина ${d} см`;
-  els.rx.dataset.text = w + ' см';
-  els.ry.dataset.text = h + ' см';
-
-  updateA4();
-  check(false);
-}
-
-function updateA4(){
-  a4Box.style.left = a4.x + 'px';
-  a4Box.style.top = a4.y + 'px';
-  a4Box.style.width = a4.w + 'px';
-  a4Box.style.height = a4.h + 'px';
-  a4Box.classList.toggle('hidden', !a4.visible);
-}
-
-function check(show = true){
-  let frameW = +els.w.value;
-  let frameH = +els.h.value;
-  let frameD = +els.d.value;
-
-  let objW = +els.objW.value;
-  let objH = +els.objH.value;
-  let objD = +els.objD.value;
-
-  let res = els.result;
-  res.className = 'result';
-
-  let title = 'Нужно отсканировать предмет';
-  let txt = 'Положите рядом лист А4 и предмет, затем нажмите «Сканировать размер».';
-
-  if(!objW || !objH){
-    res.querySelector('b').textContent = title;
-    res.querySelector('small').textContent = txt;
-    return;
-  }
-
-  let reserveW = frameW - objW;
-  let reserveH = frameH - objH;
-  let reserveD = frameD - objD;
-
-  if(reserveW >= 0 && reserveH >= 0 && reserveD >= 0){
-    res.classList.add('good');
-    title = 'Подходит';
-    txt = `Предмет примерно ${objW.toFixed(1)}×${objH.toFixed(1)} см. Запас: ${reserveW.toFixed(1)} см по ширине, ${reserveH.toFixed(1)} см по высоте, ${reserveD.toFixed(1)} см по глубине.`;
-  }else{
-    res.classList.add('bad');
-    title = 'Не подходит';
-    txt = `Предмет примерно ${objW.toFixed(1)}×${objH.toFixed(1)} см. Нужна рамка больше.`;
-  }
-
-  res.querySelector('b').textContent = title;
-  res.querySelector('small').textContent = txt;
-
-  if(show) navigator.vibrate?.(25);
-}
-
-function calibrateByA4(){
-  const scaleByWidth = a4.w / 21;
-  const scaleByHeight = a4.h / 29.7;
-  const newScale = ((scaleByWidth + scaleByHeight) / 2).toFixed(2);
-
-  els.scale.value = newScale;
-  els.scaleRange.value = Math.max(3, Math.min(18, newScale));
-
-  update();
-
-  $('#modeText').textContent = `Масштаб рассчитан по листу А4: ${newScale} px на 1 см. Теперь наведите рамку на объект.`;
-  navigator.vibrate?.(40);
-}
-
-['input','change'].forEach(ev => {
-  ['scale','scaleRange','w','h','d','objD'].forEach(id => {
-    els[id].addEventListener(ev, () => {
-      if(id === 'scale') els.scaleRange.value = els.scale.value;
-      if(id === 'scaleRange') els.scale.value = els.scaleRange.value;
-      if(id !== 'preset') els.preset.value = 'custom';
-      update();
-    });
-  });
-});
-
-els.preset.addEventListener('change', () => {
-  if(els.preset.value === 'custom') return;
-
-  let [w,h,d] = els.preset.value.split(',');
-
-  els.w.value = w;
-  els.h.value = h;
-  els.d.value = d;
-
-  update();
-});
-
-$('#fitBtn').onclick = () => check(true);
-$('#scanBtn').onclick = () => {
-  closePanel();              // свернуть шторку
-  detectA4AndObject(true);   // запустить поиск А4 и предмета
-};
-$('#togglePanel').onclick = () => {
-  if(app.classList.contains('panel-open')){
-    closePanel();
-  }else{
-    openPanel();
-  }
-};
-
-$('#shotBtn').onclick = () => {
-  alert('В прототипе снимок можно сделать стандартным скриншотом телефона.');
-};
-
-$('#hideReminder').onclick = () => {
-  $('#a4Reminder').classList.add('hidden');
-};
-
-
-
-$('#toggleA4Btn').onclick = () => {
-  a4.visible = !a4.visible;
-  $('#toggleA4Btn').textContent = a4.visible ? 'Скрыть А4' : 'Показать А4';
-  updateA4();
-};
-
-wrap.addEventListener('pointerdown', e => {
-  state.drag = true;
-  wrap.setPointerCapture(e.pointerId);
-  state.dx = e.clientX - state.x;
-  state.dy = e.clientY - state.y;
-});
-
-wrap.addEventListener('pointermove', e => {
-  if(!state.drag) return;
-  state.x = e.clientX - state.dx;
-  state.y = e.clientY - state.dy;
-  update();
-});
-
-wrap.addEventListener('pointerup', () => {
-  state.drag = false;
-});
-
-a4Box.addEventListener('pointerdown', e => {
-  a4.drag = true;
-  a4Box.setPointerCapture(e.pointerId);
-  a4.dx = e.clientX - a4.x;
-  a4.dy = e.clientY - a4.y;
-});
-
-a4Box.addEventListener('pointermove', e => {
-  if(!a4.drag) return;
-  a4.x = e.clientX - a4.dx;
-  a4.y = e.clientY - a4.dy;
-  updateA4();
-});
-
-a4Box.addEventListener('pointerup', () => {
-  a4.drag = false;
-});
-
-function startSheetDrag(e){
-  sheet.dragging = true;
-  sheet.startY = e.clientY;
-  sheet.panelHeight = panel.offsetHeight;
-  panel.classList.add('dragging');
-  handle.setPointerCapture?.(e.pointerId);
-}
-
-function moveSheetDrag(e){
-  if(!sheet.dragging) return;
-
-  const diff = e.clientY - sheet.startY;
-  const isOpen = app.classList.contains('panel-open');
-
-  let translate;
-
-  if(isOpen){
-    translate = Math.max(0, diff);
-  }else{
-    translate = Math.max(0, sheet.panelHeight - sheet.collapsed + diff);
-  }
-
-  translate = Math.min(translate, sheet.panelHeight - sheet.collapsed);
-  panel.style.transform = `translateY(${translate}px)`;
-}
-
-function endSheetDrag(e){
-  if(!sheet.dragging) return;
-
-  sheet.dragging = false;
-  panel.classList.remove('dragging');
-
-  const diff = e.clientY - sheet.startY;
-
-  if(app.classList.contains('panel-open')){
-    diff > 70 ? closePanel() : openPanel();
-  }else{
-    diff < -70 ? openPanel() : closePanel();
-  }
-}
-
-handle.addEventListener('pointerdown', startSheetDrag);
-handle.addEventListener('pointermove', moveSheetDrag);
-handle.addEventListener('pointerup', endSheetDrag);
-handle.addEventListener('pointercancel', endSheetDrag);
-
-document.addEventListener('keydown', e => {
-  if(e.key === 'q') state.rot -= 2;
-  if(e.key === 'e') state.rot += 2;
-  update();
-});
-
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js');
-}
-const scanCanvas = $('#scanCanvas');
-const scanCtx = scanCanvas.getContext('2d');
-
-function resizeScanCanvas(){
-  scanCanvas.width = innerWidth;
-  scanCanvas.height = innerHeight;
-}
-
-function drawVideoCover(){
-  resizeScanCanvas();
-
-  const cw = scanCanvas.width;
-  const ch = scanCanvas.height;
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
-
-  if(!vw || !vh) return false;
-
-  const scale = Math.max(cw / vw, ch / vh);
-  const sw = cw / scale;
-  const sh = ch / scale;
-  const sx = (vw - sw) / 2;
-  const sy = (vh - sh) / 2;
-
-  scanCtx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
-  return true;
-}
-
-function rectsOverlap(a,b){
-  return !(
-    a.x + a.width < b.x ||
-    b.x + b.width < a.x ||
-    a.y + a.height < b.y ||
-    b.y + b.height < a.y
-  );
-}
-function roundRect(ctx, x, y, w, h, r){
-  const radius = Math.min(r, w / 2, h / 2);
-
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + w - radius, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-  ctx.lineTo(x + w, y + h - radius);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-  ctx.lineTo(x + radius, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-}
-function scanObjectSize(){
-  if(!window.cvReady){
-    $('#scanStatus').textContent = 'Сканер еще загружается. Подождите пару секунд.';
-    return;
-  }
-
-  if(!drawVideoCover()){
-    $('#scanStatus').textContent = 'Камера еще не готова.';
-    return;
-  }
-
-  $('#scanStatus').textContent = 'Сканирую лист А4 и предмет...';
-
-  let src = cv.imread(scanCanvas);
-  let gray = new cv.Mat();
-  let blur = new cv.Mat();
-  let edges = new cv.Mat();
-  let contours = new cv.MatVector();
-  let hierarchy = new cv.Mat();
-
-  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-  cv.GaussianBlur(gray, blur, new cv.Size(5,5), 0);
-  cv.Canny(blur, edges, 50, 150);
-  cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-  let a4Rect = null;
-  let a4Area = 0;
-
-  for(let i = 0; i < contours.size(); i++){
-    let cnt = contours.get(i);
-    let peri = cv.arcLength(cnt, true);
-    let approx = new cv.Mat();
-    cv.approxPolyDP(cnt, approx, 0.03 * peri, true);
-
-    let rect = cv.boundingRect(cnt);
-    let area = rect.width * rect.height;
-    let ratio = Math.max(rect.width, rect.height) / Math.min(rect.width, rect.height);
-
-    if(approx.rows === 4 && area > 12000 && ratio > 1.25 && ratio < 1.6){
-      if(area > a4Area){
-        a4Area = area;
-        a4Rect = rect;
+      frame: {
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2,
+        w: 21,
+        h: 30,
+        d: 4
+      }
+    };
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+        cameraStatus.textContent = 'Камера включена';
+      } catch (e) {
+        cameraStatus.textContent = 'Нет доступа';
+        hint.textContent = 'Разреши доступ к камере в браузере.';
       }
     }
 
-    approx.delete();
-    cnt.delete();
-  }
-
-  if(!a4Rect){
-    $('#scanStatus').textContent = 'Лист А4 не найден. Положите его целиком в кадр на контрастный фон.';
-    src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-    return;
-  }
-
-  const pxPerCmW = Math.min(a4Rect.width, a4Rect.height) / 21;
-  const pxPerCmH = Math.max(a4Rect.width, a4Rect.height) / 29.7;
-  const pxPerCm = (pxPerCmW + pxPerCmH) / 2;
-
-  let objRect = null;
-  let objArea = 0;
-
-  for(let i = 0; i < contours.size(); i++){
-    let cnt = contours.get(i);
-    let rect = cv.boundingRect(cnt);
-    let area = rect.width * rect.height;
-
-    if(area < 4000) {
-      cnt.delete();
-      continue;
+    function resize() {
+      canvas.width = window.innerWidth * devicePixelRatio;
+      canvas.height = window.innerHeight * devicePixelRatio;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     }
 
-    if(rectsOverlap(rect, a4Rect)){
-      cnt.delete();
-      continue;
+    function getScale() {
+      return Number(scale.value);
     }
 
-    if(area > objArea){
-      objArea = area;
-      objRect = rect;
+    function updateFrameFromInputs() {
+      app.frame.w = Number(frameW.value);
+      app.frame.h = Number(frameH.value);
+      app.frame.d = Number(frameD.value);
+      frameSizeEl.textContent = `${app.frame.w} × ${app.frame.h}`;
     }
 
-    cnt.delete();
-  }
+    function fakeDetectObject() {
+      const t = Date.now() / 1000;
+      const baseW = Math.min(window.innerWidth * 0.32, 210);
+      const baseH = Math.min(window.innerHeight * 0.18, 150);
 
-  scanCtx.clearRect(0,0,scanCanvas.width,scanCanvas.height);
-  drawVideoCover();
+      app.object.w = baseW + Math.sin(t) * 8;
+      app.object.h = baseH + Math.cos(t * 0.8) * 6;
+      app.object.x = window.innerWidth / 2;
+      app.object.y = window.innerHeight / 2 - 30;
 
-  scanCtx.lineWidth = 4;
-  scanCtx.strokeStyle = '#FFCD00';
-  scanCtx.strokeRect(a4Rect.x, a4Rect.y, a4Rect.width, a4Rect.height);
+      scanBtn.style.left = `${app.object.x}px`;
+      scanBtn.style.top = `${app.object.y + app.object.h / 2 + 48}px`;
 
-  scanCtx.fillStyle = 'rgba(17,17,17,.75)';
-  scanCtx.fillRect(a4Rect.x, a4Rect.y - 34, 120, 28);
-  scanCtx.fillStyle = '#fff';
-  scanCtx.font = '16px system-ui';
-  scanCtx.fillText('Лист А4', a4Rect.x + 10, a4Rect.y - 13);
-
-  if(!objRect){
-    $('#scanStatus').textContent = 'Предмет не найден. Положите его рядом с листом А4, не на сам лист.';
-    src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-    return;
-  }
-
-  let objW = objRect.width / pxPerCm;
-  let objH = objRect.height / pxPerCm;
-
-  els.objW.value = objW.toFixed(1);
-  els.objH.value = objH.toFixed(1);
-
- scanCtx.strokeStyle = '#1f9d55';
-scanCtx.lineWidth = 4;
-scanCtx.strokeRect(objRect.x, objRect.y, objRect.width, objRect.height);
-
-const sizeText = `≈ ${objW.toFixed(1)} × ${objH.toFixed(1)} см`;
-
-scanCtx.font = 'bold 18px system-ui';
-const textWidth = scanCtx.measureText(sizeText).width;
-
-const badgeW = textWidth + 28;
-const badgeH = 38;
-const badgeX = objRect.x + objRect.width / 2 - badgeW / 2;
-const badgeY = objRect.y + objRect.height / 2 - badgeH / 2;
-
-scanCtx.fillStyle = 'rgba(17,17,17,.78)';
-roundRect(scanCtx, badgeX, badgeY, badgeW, badgeH, 18);
-scanCtx.fill();
-
-scanCtx.strokeStyle = 'rgba(255,255,255,.35)';
-scanCtx.lineWidth = 1;
-roundRect(scanCtx, badgeX, badgeY, badgeW, badgeH, 18);
-scanCtx.stroke();
-
-scanCtx.fillStyle = '#fff';
-scanCtx.fillText(sizeText, badgeX + 14, badgeY + 25);
-
-  $('#scanStatus').textContent = `Размер предмета найден: ${objW.toFixed(1)} × ${objH.toFixed(1)} см.`;
-
-  check(true);
-
-  src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-}
-
-$('#scanBtn').onclick = () => {
-  scanObjectSize();
-};
-function resizeScanCanvas(){
-  scanCanvas.width = innerWidth;
-  scanCanvas.height = innerHeight;
-}
-
-function drawVideoCover(){
-  resizeScanCanvas();
-
-  const cw = scanCanvas.width;
-  const ch = scanCanvas.height;
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
-
-  if(!vw || !vh) return false;
-
-  const scale = Math.max(cw / vw, ch / vh);
-  const sw = cw / scale;
-  const sh = ch / scale;
-  const sx = (vw - sw) / 2;
-  const sy = (vh - sh) / 2;
-
-  scanCtx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
-  return true;
-}
-
-function rectsOverlap(a,b){
-  return !(
-    a.x + a.width < b.x ||
-    b.x + b.width < a.x ||
-    a.y + a.height < b.y ||
-    b.y + b.height < a.y
-  );
-}
-
-function roundRect(ctx, x, y, w, h, r){
-  const radius = Math.min(r, w / 2, h / 2);
-
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + w - radius, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-  ctx.lineTo(x + w, y + h - radius);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
-  ctx.lineTo(x + radius, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-}
-
-function detectA4AndObject(showButton = true){
-  if(!window.cvReady){
-    $('#scanStatus').textContent = 'Сканер загружается. Подождите пару секунд.';
-    return false;
-  }
-
-  if(!drawVideoCover()){
-    $('#scanStatus').textContent = 'Камера еще не готова.';
-    return false;
-  }
-
-  let src = cv.imread(scanCanvas);
-  let gray = new cv.Mat();
-  let blur = new cv.Mat();
-  let edges = new cv.Mat();
-  let contours = new cv.MatVector();
-  let hierarchy = new cv.Mat();
-
-  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-  cv.GaussianBlur(gray, blur, new cv.Size(5,5), 0);
-  cv.Canny(blur, edges, 50, 150);
-  cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-  let a4Rect = null;
-  let a4Area = 0;
-
-  for(let i = 0; i < contours.size(); i++){
-    let cnt = contours.get(i);
-    let peri = cv.arcLength(cnt, true);
-    let approx = new cv.Mat();
-    cv.approxPolyDP(cnt, approx, 0.03 * peri, true);
-
-    let rect = cv.boundingRect(cnt);
-    let area = rect.width * rect.height;
-    let ratio = Math.max(rect.width, rect.height) / Math.min(rect.width, rect.height);
-
-    if(approx.rows === 4 && area > 12000 && ratio > 1.25 && ratio < 1.6){
-      if(area > a4Area){
-        a4Area = area;
-        a4Rect = rect;
+      if (!app.scanned && !app.scanning) {
+        scanBtn.classList.add('show');
       }
     }
 
-    approx.delete();
-  }
+    function drawGrid() {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,.12)';
+      ctx.lineWidth = 1;
 
-  if(!a4Rect){
-    floatingScanBtn.classList.remove('visible');
-    $('#scanStatus').textContent = 'Ищу лист А4. Положите его целиком в кадр.';
-    src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-    return false;
-  }
+      for (let x = 0; x < window.innerWidth; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, window.innerHeight);
+        ctx.stroke();
+      }
 
-  const pxPerCmW = Math.min(a4Rect.width, a4Rect.height) / 21;
-  const pxPerCmH = Math.max(a4Rect.width, a4Rect.height) / 29.7;
-  const pxPerCm = (pxPerCmW + pxPerCmH) / 2;
+      for (let y = 0; y < window.innerHeight; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(window.innerWidth, y);
+        ctx.stroke();
+      }
 
-  let objRect = null;
-  let objArea = 0;
-
-  for(let i = 0; i < contours.size(); i++){
-    let cnt = contours.get(i);
-    let rect = cv.boundingRect(cnt);
-    let area = rect.width * rect.height;
-
-    if(area < 4000) continue;
-    if(rectsOverlap(rect, a4Rect)) continue;
-
-    if(area > objArea){
-      objArea = area;
-      objRect = rect;
+      ctx.restore();
     }
-  }
 
-  scanCtx.clearRect(0,0,scanCanvas.width,scanCanvas.height);
-  drawVideoCover();
+    function drawFrame() {
+      updateFrameFromInputs();
 
-  scanCtx.lineWidth = 4;
-  scanCtx.strokeStyle = '#FFCD00';
-  scanCtx.strokeRect(a4Rect.x, a4Rect.y, a4Rect.width, a4Rect.height);
+      const s = getScale();
+      const w = app.frame.w * s;
+      const h = app.frame.h * s;
+      const x = app.frame.x - w / 2;
+      const y = app.frame.y - h / 2;
+      const depth = app.frame.d * 5;
 
-  if(!objRect){
-    floatingScanBtn.classList.remove('visible');
-    $('#scanStatus').textContent = 'Ищу предмет рядом с листом А4.';
-    src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-    return false;
-  }
+      ctx.save();
 
-  const objW = objRect.width / pxPerCm;
-  const objH = objRect.height / pxPerCm;
+      ctx.fillStyle = 'rgba(255,205,0,.08)';
+      ctx.fillRect(x, y, w, h);
 
-  detectedScan = {
-    a4Rect,
-    objRect,
-    objW,
-    objH,
-    pxPerCm
-  };
+      ctx.strokeStyle = '#FFCD00';
+      ctx.lineWidth = 12;
+      ctx.strokeRect(x, y, w, h);
 
-  scanCtx.strokeStyle = 'rgba(31,157,85,.9)';
-  scanCtx.lineWidth = 3;
-  scanCtx.strokeRect(objRect.x, objRect.y, objRect.width, objRect.height);
+      ctx.strokeStyle = 'rgba(255,255,255,.65)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 8]);
+      ctx.strokeRect(x + 18, y + 18, w - 36, h - 36);
+      ctx.setLineDash([]);
 
-  if(showButton){
-    const btnX = Math.min(innerWidth - 110, Math.max(110, objRect.x + objRect.width / 2));
-    const btnY = Math.max(90, objRect.y - 36);
+      ctx.fillStyle = 'rgba(80,77,74,.35)';
+      ctx.beginPath();
+      ctx.moveTo(x + w, y);
+      ctx.lineTo(x + w + depth, y + depth);
+      ctx.lineTo(x + w + depth, y + h + depth);
+      ctx.lineTo(x + w, y + h);
+      ctx.closePath();
+      ctx.fill();
 
-    floatingScanBtn.style.left = btnX + 'px';
-    floatingScanBtn.style.top = btnY + 'px';
-    floatingScanBtn.classList.add('visible');
+      ctx.fillStyle = 'rgba(0,0,0,.55)';
+      ctx.fillRect(x + 8, y - 34, 126, 26);
+      ctx.fillStyle = '#fff';
+      ctx.font = '800 13px system-ui';
+      ctx.fillText(`${app.frame.w} × ${app.frame.h} см`, x + 18, y - 16);
 
-    $('#scanStatus').textContent = 'Предмет найден. Нажмите кнопку рядом с ним.';
-  }
-
-  src.delete(); gray.delete(); blur.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-
-  return true;
-}
-
-function drawScanResult(){
-  const {a4Rect, objRect, objW, objH} = detectedScan;
-  if(!objRect) return;
-
-  scanCtx.clearRect(0,0,scanCanvas.width,scanCanvas.height);
-  drawVideoCover();
-
-  scanCtx.lineWidth = 4;
-  scanCtx.strokeStyle = '#FFCD00';
-  scanCtx.strokeRect(a4Rect.x, a4Rect.y, a4Rect.width, a4Rect.height);
-
-  scanCtx.strokeStyle = '#1f9d55';
-  scanCtx.lineWidth = 4;
-  scanCtx.strokeRect(objRect.x, objRect.y, objRect.width, objRect.height);
-
-  const sizeText = `≈ ${objW.toFixed(1)} × ${objH.toFixed(1)} см`;
-
-  scanCtx.font = 'bold 18px system-ui';
-  const textWidth = scanCtx.measureText(sizeText).width;
-
-  const badgeW = textWidth + 28;
-  const badgeH = 38;
-  const badgeX = objRect.x + objRect.width / 2 - badgeW / 2;
-  const badgeY = objRect.y + objRect.height / 2 - badgeH / 2;
-
-  scanCtx.fillStyle = 'rgba(17,17,17,.78)';
-  roundRect(scanCtx, badgeX, badgeY, badgeW, badgeH, 18);
-  scanCtx.fill();
-
-  scanCtx.strokeStyle = 'rgba(255,255,255,.35)';
-  scanCtx.lineWidth = 1;
-  roundRect(scanCtx, badgeX, badgeY, badgeW, badgeH, 18);
-  scanCtx.stroke();
-
-  scanCtx.fillStyle = '#fff';
-  scanCtx.fillText(sizeText, badgeX + 14, badgeY + 25);
-}
-
-function animateScan(){
-  const {a4Rect, objRect} = detectedScan;
-  if(!objRect) return;
-
-  app.classList.add('scanning');
-  floatingScanBtn.classList.remove('visible');
-
-  scanAnimation.active = true;
-  scanAnimation.progress = 0;
-
-  $('#scanStatus').textContent = 'Сканирую предмет...';
-
-  function frame(){
-    if(!scanAnimation.active) return;
-
-    scanCtx.clearRect(0,0,scanCanvas.width,scanCanvas.height);
-    drawVideoCover();
-
-    scanCtx.lineWidth = 4;
-    scanCtx.strokeStyle = '#FFCD00';
-    scanCtx.strokeRect(a4Rect.x, a4Rect.y, a4Rect.width, a4Rect.height);
-
-    scanCtx.strokeStyle = 'rgba(31,157,85,.95)';
-    scanCtx.lineWidth = 4;
-    scanCtx.strokeRect(objRect.x, objRect.y, objRect.width, objRect.height);
-
-    const y = objRect.y + objRect.height * scanAnimation.progress;
-
-    const gradient = scanCtx.createLinearGradient(0, y - 30, 0, y + 30);
-    gradient.addColorStop(0, 'rgba(31,157,85,0)');
-    gradient.addColorStop(.5, 'rgba(31,157,85,.9)');
-    gradient.addColorStop(1, 'rgba(31,157,85,0)');
-
-    scanCtx.fillStyle = gradient;
-    scanCtx.fillRect(objRect.x, y - 30, objRect.width, 60);
-
-    scanCtx.strokeStyle = '#1f9d55';
-    scanCtx.lineWidth = 3;
-    scanCtx.beginPath();
-    scanCtx.moveTo(objRect.x, y);
-    scanCtx.lineTo(objRect.x + objRect.width, y);
-    scanCtx.stroke();
-
-    scanAnimation.progress += 0.025;
-
-    if(scanAnimation.progress <= 1){
-      requestAnimationFrame(frame);
-    }else{
-      scanAnimation.active = false;
-      app.classList.remove('scanning');
-
-      els.objW.value = detectedScan.objW.toFixed(1);
-      els.objH.value = detectedScan.objH.toFixed(1);
-
-      drawScanResult();
-
-      $('#scanStatus').textContent = `Размер предмета: ${detectedScan.objW.toFixed(1)} × ${detectedScan.objH.toFixed(1)} см.`;
-      check(true);
-      navigator.vibrate?.(50);
+      ctx.restore();
     }
-  }
 
-  requestAnimationFrame(frame);
-}
+    function drawObject() {
+      const { x, y, w, h } = app.object;
 
-let detectTimer = null;
+      ctx.save();
 
-function startLiveDetection(){
-  if(detectTimer) clearInterval(detectTimer);
+      if (app.scanning) {
+        ctx.strokeStyle = '#25C06D';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([12, 10]);
 
-  detectTimer = setInterval(() => {
-    if(scanAnimation.active) return;
-    if(app.classList.contains('panel-open')) return;
-    detectA4AndObject(true);
-  }, 1200);
-}
+        const progress = (Date.now() % 1200) / 1200;
+        const scanY = y - h / 2 + h * progress;
 
-floatingScanBtn.onclick = () => {
-  if(!detectedScan.objRect){
-    const found = detectA4AndObject(false);
-    if(!found) return;
-  }
+        ctx.strokeRect(x - w / 2, y - h / 2, w, h);
 
-  animateScan();
-};
-startCamera();
-update();
-setTimeout(startLiveDetection, 1500);
-</script>
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'rgba(37,192,109,.95)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(x - w / 2, scanY);
+        ctx.lineTo(x + w / 2, scanY);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(37,192,109,.18)';
+        ctx.fillRect(x - w / 2, y - h / 2, w, h * progress);
+      } else {
+        ctx.strokeStyle = app.scanned ? '#25C06D' : 'rgba(255,255,255,.85)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash(app.scanned ? [] : [8, 8]);
+        ctx.strokeRect(x - w / 2, y - h / 2, w, h);
+      }
+
+      ctx.restore();
+    }
+
+    function updateFloatingResult() {
+      if (!app.scanned) {
+        floatingResult.classList.remove('show');
+        return;
+      }
+
+      floatingResult.classList.add('show');
+      floatingResult.style.left = `${app.object.x}px`;
+      floatingResult.style.top = `${app.object.y - app.object.h / 2 - 34}px`;
+      floatingResult.textContent = `≈ ${app.object.cmW.toFixed(1)} × ${app.object.cmH.toFixed(1)} см`;
+    }
+
+    function runScan() {
+      app.scanning = true;
+      app.scanned = false;
+      scanBtn.classList.remove('show');
+      floatingResult.classList.remove('show');
+      hint.textContent = 'Сканирую предмет… держи камеру ровно.';
+
+      setTimeout(() => {
+        const s = getScale();
+
+        app.object.cmW = app.object.w / s;
+        app.object.cmH = app.object.h / s;
+
+        app.scanning = false;
+        app.scanned = true;
+
+        objectSizeEl.textContent = `${app.object.cmW.toFixed(1)} × ${app.object.cmH.toFixed(1)}`;
+        hint.textContent = 'Размер рассчитан примерно. Теперь можно проверить, подходит ли предмет в рамку.';
+
+        checkFit();
+      }, 1500);
+    }
+
+    function checkFit() {
+      if (!app.scanned) {
+        fitStatus.textContent = 'Не измерено';
+        fitStatus.className = 'status warn';
+        return;
+      }
+
+      updateFrameFromInputs();
+
+      const objW = Math.min(app.object.cmW, app.object.cmH);
+      const objH = Math.max(app.object.cmW, app.object.cmH);
+      const frmW = Math.min(app.frame.w, app.frame.h);
+      const frmH = Math.max(app.frame.w, app.frame.h);
+      const depthOk = Number(objectD.value) <= app.frame.d;
+
+      const marginW = frmW - objW;
+      const marginH = frmH - objH;
+
+      if (marginW >= 1 && marginH >= 1 && depthOk) {
+        fitStatus.textContent = 'Подходит';
+        fitStatus.className = 'status good';
+      } else if (marginW >= 0 && marginH >= 0 && depthOk) {
+        fitStatus.textContent = 'Впритык';
+        fitStatus.className = 'status warn';
+      } else {
+        fitStatus.textContent = 'Не подходит';
+        fitStatus.className = 'status bad';
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      fakeDetectObject();
+      drawGrid();
+      drawFrame();
+      drawObject();
+      updateFloatingResult();
+
+      requestAnimationFrame(draw);
+    }
+
+    preset.addEventListener('change', () => {
+      if (preset.value === 'custom') return;
+
+      const [w, h, d] = preset.value.split(',').map(Number);
+      frameW.value = w;
+      frameH.value = h;
+      frameD.value = d;
+      updateFrameFromInputs();
+      checkFit();
+    });
+
+    [frameW, frameH, frameD, objectD, scale].forEach(el => {
+      el.addEventListener('input', () => {
+        preset.value = 'custom';
+        updateFrameFromInputs();
+        if (app.scanned) {
+          app.object.cmW = app.object.w / getScale();
+          app.object.cmH = app.object.h / getScale();
+          objectSizeEl.textContent = `${app.object.cmW.toFixed(1)} × ${app.object.cmH.toFixed(1)}`;
+        }
+        checkFit();
+      });
+    });
+
+    calibrateBtn.addEventListener('click', () => {
+      app.showA4 = !app.showA4;
+      a4Frame.classList.toggle('show', app.showA4);
+      calibrateBtn.textContent = app.showA4 ? 'Скрыть А4' : 'Показать А4';
+    });
+
+    checkBtn.addEventListener('click', checkFit);
+    scanBtn.addEventListener('click', runScan);
+
+    shotBtn.addEventListener('click', () => {
+      const shot = document.createElement('canvas');
+      shot.width = canvas.width;
+      shot.height = canvas.height;
+
+      const sctx = shot.getContext('2d');
+      sctx.drawImage(video, 0, 0, shot.width, shot.height);
+      sctx.drawImage(canvas, 0, 0);
+
+      const link = document.createElement('a');
+      link.download = 'framefit-shot.png';
+      link.href = shot.toDataURL('image/png');
+      link.click();
+    });
+
+    panel.addEventListener('click', () => {
+      panel.classList.toggle('open');
+    });
+
+    window.addEventListener('resize', resize);
+
+    resize();
+    startCamera();
+    updateFrameFromInputs();
+    draw();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
 </body>
 </html>
