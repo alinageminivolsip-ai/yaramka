@@ -83,6 +83,17 @@
     </div>
   </div>
   <button class="btn primary full" id="cropBtn" type="button" style="margin-top:14px">Вырезать предмет</button>
+       <div id="cropActions" style="display:none;margin-top:12px">
+  <div class="bottom-actions">
+    <button class="btn" id="cropBackBtn">
+      Назад
+    </button>
+
+    <button class="btn primary" id="cropNextBtn">
+      Далее
+    </button>
+  </div>
+</div>
   <p class="mini">Можно двигать рамку и тянуть за желтую точку в правом нижнем углу.</p>
 </div>
     <section id="arScreen" style="display:none;position:fixed;inset:0;z-index:999;background:#111">
@@ -133,7 +144,15 @@ let arDrag={active:false,dx:0,dy:0,x:window.innerWidth/2,y:window.innerHeight/2}
 if(s.crop){
   cropWrap.style.display='block';
   cropImg.src=data.photoData;
-}if(s.number){numberInputWrap.style.display='flex';answerInput.value=data[s.key]??'';answerInput.placeholder=s.placeholder;setTimeout(()=>answerInput.focus(),80)}if(s.presets)renderFrames();$('backBtn').disabled=step===0;$('nextBtn').textContent=step===steps.length-1?'Показать 3D':'Далее'}
+  document.getElementById('cropActions').style.display='none';
+}if(s.number){numberInputWrap.style.display='flex';answerInput.value=data[s.key]??'';answerInput.placeholder=s.placeholder;setTimeout(()=>answerInput.focus(),80)}if(s.presets)renderFrames();$('backBtn').disabled=step===0;$('nextBtn').textContent=step===steps.length-1?'Показать 3D':'Далее'} 
+    const actions = document.querySelector('.bottom-actions');
+
+if(s.crop){
+  actions.style.display='none';
+}else{
+  actions.style.display='grid';
+}
     function renderChoices(kind){choiceWrap.style.display='grid';choiceWrap.innerHTML='';const arr=kind==='types'?objectTypes:modes;arr.forEach(item=>{const label=typeof item==='string'?item:item.label;const value=typeof item==='string'?item:item.value;const hint=typeof item==='string'?'выбрать':item.hint;const selected=kind==='types'?selectedType===value:selectedMode===value;const b=document.createElement('button');b.type='button';b.className='choice'+(selected?' selected':'');b.innerHTML=`<span>${label}</span><small>${hint}</small>`;b.onclick=()=>{if(kind==='types'){selectedType=value;data.type=value}else{selectedMode=value;data.mode=value}renderChoices(kind)};choiceWrap.appendChild(b)})}
     function renderFrames(){presetWrap.style.display='grid';presetWrap.innerHTML='';framePresets.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.className='preset'+(i===selectedFrame?' selected':'');b.innerHTML=p.custom?`<span>${p.label}</span><small>ввести вручную</small>`:`<span>${p.label}</span><small>глубокая рамка</small>`;b.onclick=()=>{selectedFrame=i;if(p.custom){customW.value=data.frame.w||'';customH.value=data.frame.h||'';customD.value=data.frame.d||''}else{data.frame={w:p.w,h:p.h,d:p.d}}renderFrames()};presetWrap.appendChild(b)});if(framePresets[selectedFrame]?.custom)customGrid.classList.add('show')}
     function parseNumber(el){return Number(String(el.value).replace(',','.'))} function flash(el){el.style.outline='3px solid rgba(201,42,42,.25)';setTimeout(()=>el.style.outline='',450)}
@@ -179,9 +198,11 @@ function cropImage(){
   const ctx=c.getContext('2d');
   ctx.drawImage(cropImg,sx,sy,sw,sh,0,0,c.width,c.height);
 
-  data.croppedPhotoData=c.toDataURL('image/png');
-  cropBtn.textContent='Предмет вырезан';
-  setTimeout(()=>cropBtn.textContent='Вырезать предмет',900);
+ data.croppedPhotoData=c.toDataURL('image/png');
+
+cropBtn.textContent='✓ Предмет вырезан';
+
+document.getElementById('cropActions').style.display='block';
 }
 
 cropBox.addEventListener('pointerdown',e=>{
@@ -230,6 +251,13 @@ window.addEventListener('pointerup',()=>{
 
 cropBtn.onclick=()=>{
   cropImage();
+};
+    document.getElementById('cropBackBtn').onclick=()=>{
+  back();
+};
+
+document.getElementById('cropNextBtn').onclick=()=>{
+  next();
 };
     $('startBtn').onclick=()=>{showScreen('question');step=0;renderStep()};$('nextBtn').onclick=next;$('backBtn').onclick=back;$('restartBtn').onclick=()=>{
   data={type:null,mode:'cast',photoData:null,croppedPhotoData:null,objW:null,objH:null,objD:null,frame:{w:21,h:30,d:4}};
