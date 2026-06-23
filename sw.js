@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yaramka-3d-v10';
+const CACHE_NAME = 'yaramka-3d-v13';
 const ASSETS = [
   './',
   './index.html',
