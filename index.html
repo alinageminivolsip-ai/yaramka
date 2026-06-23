@@ -208,6 +208,47 @@
     #closeArBtn { position:absolute; top:calc(env(safe-area-inset-top) + 14px); right:14px; z-index:3; border:0; border-radius:999px; padding:12px 16px; background:#fff; color:#22314A; font-weight:900; }
     #arScale { position:absolute; left:20px; right:20px; bottom:calc(env(safe-area-inset-bottom) + 24px); width:calc(100% - 40px); z-index:3; }
 
+    .frame-color-panel{
+  position:absolute;
+  left:14px;
+  top:14px;
+  z-index:5;
+  display:flex;
+  gap:10px;
+  padding:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.86);
+  border:1px solid var(--line);
+  backdrop-filter:blur(14px);
+  box-shadow:0 10px 26px rgba(23,71,132,.12);
+}
+
+.color-dot{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:2px solid rgba(34,49,74,.18);
+  display:grid;
+  place-items:center;
+  font-weight:950;
+  color:#fff;
+  cursor:pointer;
+}
+
+.color-dot.white{
+  background:#fff;
+  color:var(--blue);
+}
+
+.color-dot.black{
+  background:#111;
+}
+
+.color-dot.selected::after{
+  content:"✓";
+  font-size:18px;
+  line-height:1;
+}
     @media(min-width:900px) {
       .screen { max-width:1120px; width:100%; margin:0 auto; }
       .result-screen.active { display:grid; grid-template-columns:390px 1fr; align-items:stretch; }
@@ -327,7 +368,12 @@
         </div>
 
         <div class="viewer">
-          <div id="viewer3d"></div>
+  <div class="frame-color-panel">
+    <button class="color-dot black selected" type="button" data-frame-color="black">✓</button>
+    <button class="color-dot white" type="button" data-frame-color="white"></button>
+  </div>
+
+  <div id="viewer3d"></div>
           <div class="viewer-note"><b>Покрутите рамку пальцем.</b> В режиме слепка объект строится по силуэту фото и получает матовый материал.</div>
         </div>
       </section>
@@ -658,6 +704,7 @@
     answerInput.addEventListener('keydown',e=>{if(e.key==='Enter')next();});
 
     let scene,camera,renderer,controls,frameGroup;
+    let frameMeshes = [];
 
     function dispose3D(){
       const el=$('viewer3d');
@@ -693,6 +740,23 @@
       fill.position.set(-50,40,50);
       scene.add(fill);
       createFrameModel();
+      function applyFrameColor(color){
+  data.frameColor = color;
+
+  const colorValue = color === 'white' ? 0xffffff : 0x111111;
+  const roughnessValue = color === 'white' ? .42 : .58;
+
+  frameMeshes.forEach(mesh=>{
+    mesh.material.color.setHex(colorValue);
+    mesh.material.roughness = roughnessValue;
+    mesh.material.needsUpdate = true;
+  });
+
+  document.querySelectorAll('.color-dot').forEach(btn=>{
+    btn.classList.toggle('selected', btn.dataset.frameColor === color);
+    btn.textContent = btn.dataset.frameColor === color ? '✓' : '';
+  });
+}
       animate3D();
       window.addEventListener('resize',on3DResize);
     }
@@ -709,16 +773,17 @@
     function createFrameModel(){
       frameGroup=new THREE.Group();
       scene.add(frameGroup);
+      frameMeshes = [];
       const fw=data.frame.w,fh=data.frame.h,fd=data.frame.d;
       const th=Math.max(1.6,Math.min(fw,fh)*.075);
       const iw=fw,ih=fh,ow=fw+th*2;
       const black=new THREE.MeshStandardMaterial({color:0x111111,roughness:.58,metalness:.08});
       const inner=new THREE.MeshStandardMaterial({color:0xf8f5eb,roughness:.72});
       const glass=new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:.18,roughness:.05,transmission:.25});
-      box(ow,th,fd,0,ih/2+th/2,0,black,frameGroup);
-      box(ow,th,fd,0,-ih/2-th/2,0,black,frameGroup);
-      box(th,ih,fd,-iw/2-th/2,0,0,black,frameGroup);
-      box(th,ih,fd,iw/2+th/2,0,0,black,frameGroup);
+     frameMeshes.push(box(ow,th,fd,0,ih/2+th/2,0,black,frameGroup));
+frameMeshes.push(box(ow,th,fd,0,-ih/2-th/2,0,black,frameGroup));
+frameMeshes.push(box(th,ih,fd,-iw/2-th/2,0,0,black,frameGroup));
+frameMeshes.push(box(th,ih,fd,iw/2+th/2,0,0,black,frameGroup));
       box(iw,ih,.55,0,0,-fd/2,inner,frameGroup);
       box(iw,.42,fd,0,ih/2,0,inner,frameGroup);
       box(iw,.42,fd,0,-ih/2,0,inner,frameGroup);
@@ -950,7 +1015,11 @@
 
     $('arBtn').addEventListener('click',openAR);
     closeArBtn.addEventListener('click',closeAR);
-
+document.querySelectorAll('.color-dot').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    applyFrameColor(btn.dataset.frameColor);
+  });
+});
     window.addEventListener('load',()=>{setTimeout(()=>{$('splash')?.classList.add('hide');},750);});
     showScreen('start');
 
