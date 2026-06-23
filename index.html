@@ -50,7 +50,47 @@
     <div class="topbar"><div class="brand">FrameFit 3D</div><div class="step-pill" id="stepPill">Старт</div></div>
     <div class="screen">
       <section class="hero" id="startScreen"><div class="card"><h1>Проверим, как предмет будет смотреться в глубокой рамке</h1><p class="lead">Загрузите фото, выберите способ отображения, укажите размеры. В конце появится 3D-примерка.</p><p class="mini">Режим “объемный слепок” вырезает силуэт предмета и делает из него матовую 3D-форму.</p><div class="bottom-actions"><button class="btn primary full" id="startBtn">Начать примерку</button></div></div></section>
-      <section class="question" id="questionScreen"><div class="card" style="width:100%"><h2 id="questionTitle"></h2><p class="lead" id="questionText"></p><div id="choiceWrap" class="choices"></div><div id="uploadWrap" class="upload-box" style="display:none"><input class="file-input" id="photoInput" type="file" accept="image/*"><button class="btn primary full" id="uploadBtn" type="button">Выбрать фото</button><p class="mini">Для слепка лучше светлый предмет на контрастном фоне.</p><div class="upload-preview" id="uploadPreview"><img id="previewImg" alt="Фото предмета"></div></div><div id="numberInputWrap" class="field-big" style="display:none"><input id="answerInput" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0"/><div class="unit">см</div></div><div id="presetWrap" class="presets" style="display:none"></div><div class="custom-grid" id="customGrid"><input id="customW" type="number" placeholder="Ширина" step="0.1"><input id="customH" type="number" placeholder="Высота" step="0.1"><input id="customD" type="number" placeholder="Глубина" step="0.1"></div><div class="bottom-actions"><button class="btn" id="backBtn">Назад</button><button class="btn primary" id="nextBtn">Далее</button></div></div></section>
+      <section class="question" id="questionScreen"><div class="card" style="width:100%"><h2 id="questionTitle"></h2><p class="lead" id="questionText"></p><div id="choiceWrap" class="choices"></div><div id="uploadWrap" class="upload-box" style="display:none"><input class="file-input" id="photoInput" type="file" accept="image/*"><button class="btn primary full" id="uploadBtn" type="button">Выбрать фото</button><p class="mini">Для слепка лучше светлый предмет на контрастном фоне.</p><div class="upload-preview" id="uploadPreview"><img id="previewImg" alt="Фото предмета"></div></div>  <div id="cropWrap" class="upload-box" style="display:none">
+
+
+
+
+
+
+
+  <div style="position:relative;border-radius:20px;overflow:hidden;background:#fff;border:1px solid var(--line)">
+
+
+
+
+
+
+
+    <img id="cropImg" style="display:block;width:100%;max-height:420px;object-fit:contain">
+
+
+
+
+
+
+
+    <div id="cropBox" style="position:absolute;left:15%;top:15%;width:70%;height:70%;border:3px solid var(--yellow);border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35);touch-action:none">
+
+
+
+
+
+
+
+      <div id="cropHandle" style="position:absolute;right:-10px;bottom:-10px;width:28px;height:28px;border-radius:50%;background:var(--yellow);border:3px solid #fff"></div>
+
+
+
+
+
+
+
+    </div><div id="numberInputWrap" class="field-big" style="display:none"><input id="answerInput" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0"/><div class="unit">см</div></div><div id="presetWrap" class="presets" style="display:none"></div><div class="custom-grid" id="customGrid"><input id="customW" type="number" placeholder="Ширина" step="0.1"><input id="customH" type="number" placeholder="Высота" step="0.1"><input id="customD" type="number" placeholder="Глубина" step="0.1"></div><div class="bottom-actions"><button class="btn" id="backBtn">Назад</button><button class="btn primary" id="nextBtn">Далее</button></div></div></section>
       <section class="result-screen" id="resultScreen"><div class="result-header"><div class="badge warn" id="resultBadge">Расчет</div><div class="result-title" id="resultTitle">Проверяем посадку</div><p class="lead" id="resultText"></p><div class="metrics"><div class="metric"><span>Предмет</span><b id="objectMetric">—</b></div><div class="metric"><span>Рамка</span><b id="frameMetric">—</b></div><div class="metric"><span>Запас</span><b id="marginMetric">—</b></div></div><div class="bottom-actions">
   <button class="btn" id="restartBtn">Заново</button>
   <button class="btn primary" id="editBtn">Изменить</button>
@@ -59,27 +99,6 @@
 <button class="btn primary full" id="arBtn" style="margin-top:10px;width:100%">
   Примерить в интерьере
 </button></div><div class="viewer"><div id="viewer3d"></div><div class="viewer-note"><b>Покрутите рамку пальцем.</b> В режиме слепка объект строится по силуэту фото и получает матовый материал с мягкой шероховатостью.</div></div></section>
-    </div>
-     <div id="cropWrap" class="upload-box" style="display:none">
-
-
-
-  <div style="position:relative;border-radius:20px;overflow:hidden;background:#fff;border:1px solid var(--line)">
-
-
-
-    <img id="cropImg" style="display:block;width:100%;max-height:420px;object-fit:contain">
-
-
-
-    <div id="cropBox" style="position:absolute;left:15%;top:15%;width:70%;height:70%;border:3px solid var(--yellow);border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35);touch-action:none">
-
-
-
-      <div id="cropHandle" style="position:absolute;right:-10px;bottom:-10px;width:28px;height:28px;border-radius:50%;background:var(--yellow);border:3px solid #fff"></div>
-
-
-
     </div>
   </div>
   <button class="btn primary full" id="cropBtn" type="button" style="margin-top:14px">Вырезать предмет</button>
@@ -145,14 +164,18 @@ if(s.crop){
   cropWrap.style.display='block';
   cropImg.src=data.photoData;
   document.getElementById('cropActions').style.display='none';
-}if(s.number){numberInputWrap.style.display='flex';answerInput.value=data[s.key]??'';answerInput.placeholder=s.placeholder;setTimeout(()=>answerInput.focus(),80)}if(s.presets)renderFrames();$('backBtn').disabled=step===0;$('nextBtn').textContent=step===steps.length-1?'Показать 3D':'Далее'} 
-    const actions = document.querySelector('.bottom-actions');
+}if(s.number){numberInputWrap.style.display='flex';answerInput.value=data[s.key]??'';answerInput.placeholder=s.placeholder;setTimeout(()=>answerInput.focus(),80)}if(s.presets)renderFrames();$('backBtn').disabled=step===0;
+$('nextBtn').textContent=step===steps.length-1?'Показать 3D':'Далее';
+
+const mainActions = $('backBtn').parentElement;
 
 if(s.crop){
-  actions.style.display='none';
+  mainActions.style.display='none';
 }else{
-  actions.style.display='grid';
+  mainActions.style.display='grid';
 }
+}
+  
     function renderChoices(kind){choiceWrap.style.display='grid';choiceWrap.innerHTML='';const arr=kind==='types'?objectTypes:modes;arr.forEach(item=>{const label=typeof item==='string'?item:item.label;const value=typeof item==='string'?item:item.value;const hint=typeof item==='string'?'выбрать':item.hint;const selected=kind==='types'?selectedType===value:selectedMode===value;const b=document.createElement('button');b.type='button';b.className='choice'+(selected?' selected':'');b.innerHTML=`<span>${label}</span><small>${hint}</small>`;b.onclick=()=>{if(kind==='types'){selectedType=value;data.type=value}else{selectedMode=value;data.mode=value}renderChoices(kind)};choiceWrap.appendChild(b)})}
     function renderFrames(){presetWrap.style.display='grid';presetWrap.innerHTML='';framePresets.forEach((p,i)=>{const b=document.createElement('button');b.type='button';b.className='preset'+(i===selectedFrame?' selected':'');b.innerHTML=p.custom?`<span>${p.label}</span><small>ввести вручную</small>`:`<span>${p.label}</span><small>глубокая рамка</small>`;b.onclick=()=>{selectedFrame=i;if(p.custom){customW.value=data.frame.w||'';customH.value=data.frame.h||'';customD.value=data.frame.d||''}else{data.frame={w:p.w,h:p.h,d:p.d}}renderFrames()};presetWrap.appendChild(b)});if(framePresets[selectedFrame]?.custom)customGrid.classList.add('show')}
     function parseNumber(el){return Number(String(el.value).replace(',','.'))} function flash(el){el.style.outline='3px solid rgba(201,42,42,.25)';setTimeout(()=>el.style.outline='',450)}
