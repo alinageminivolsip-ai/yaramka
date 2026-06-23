@@ -302,7 +302,15 @@
 
           <div id="uploadWrap" class="upload-box" style="display:none">
             <input class="file-input" id="photoInput" type="file" accept="image/*">
+<input class="file-input" id="cameraInput" type="file" accept="image/*" capture="environment">
             <button class="btn primary full" id="uploadBtn" type="button">Выбрать фото</button>
+            <button class="btn blue full" id="cameraPhotoBtn" type="button" style="margin-top:10px">
+  Сделать фото
+</button>
+
+<p class="mini">
+  Для фото положите предмет на белый лист или светлый фон. Так силуэт получится чище.
+</p>
             <p class="mini">Для слепка лучше светлый предмет на контрастном фоне.</p>
             <div class="upload-preview" id="uploadPreview">
               <img id="previewImg" alt="Фото предмета">
@@ -398,7 +406,7 @@
     const $ = id => document.getElementById(id);
 
     const startScreen=$('startScreen'),questionScreen=$('questionScreen'),resultScreen=$('resultScreen'),stepPill=$('stepPill'),questionTitle=$('questionTitle'),questionText=$('questionText');
-    const choiceWrap=$('choiceWrap'),uploadWrap=$('uploadWrap'),uploadBtn=$('uploadBtn'),photoInput=$('photoInput'),uploadPreview=$('uploadPreview'),previewImg=$('previewImg');
+    const choiceWrap=$('choiceWrap'),uploadWrap=$('uploadWrap'),uploadBtn=$('uploadBtn'),photoInput=$('photoInput'),cameraPhotoBtn=$('cameraPhotoBtn'),cameraInput=$('cameraInput'),uploadPreview=$('uploadPreview'),previewImg=$('previewImg');
     const cropWrap=$('cropWrap'),cropImg=$('cropImg'),cropBox=$('cropBox'),cropHandle=$('cropHandle'),cropBtn=$('cropBtn'),cropActions=$('cropActions'),cropBackBtn=$('cropBackBtn'),cropNextBtn=$('cropNextBtn');
     const numberInputWrap=$('numberInputWrap'),answerInput=$('answerInput'),presetWrap=$('presetWrap'),customGrid=$('customGrid'),customW=$('customW'),customH=$('customH'),customD=$('customD'),mainActions=$('mainActions');
     const resultBadge=$('resultBadge'),resultTitle=$('resultTitle'),resultText=$('resultText'),objectMetric=$('objectMetric'),frameMetric=$('frameMetric'),marginMetric=$('marginMetric');
@@ -608,7 +616,7 @@
       setTimeout(init3D,100);
     }
 
-    uploadBtn.onclick=()=>photoInput.click();
+    cameraPhotoBtn.onclick=()=>cameraInput.click();
     photoInput.onchange=()=>{
       const file=photoInput.files?.[0];
       if(!file)return;
@@ -621,7 +629,19 @@
       };
       reader.readAsDataURL(file);
     };
+cameraInput.onchange=()=>{
+  const file=cameraInput.files?.[0];
+  if(!file)return;
 
+  const reader=new FileReader();
+  reader.onload=e=>{
+    data.photoData=e.target.result;
+    data.croppedPhotoData=null;
+    previewImg.src=data.photoData;
+    uploadPreview.style.display='block';
+  };
+  reader.readAsDataURL(file);
+};
     let cropState={drag:false,resize:false,startX:0,startY:0,startLeft:0,startTop:0,startW:0,startH:0};
 
     function getCropNumbers(){
@@ -699,7 +719,17 @@
     $('backBtn').onclick=back;
 
     $('restartBtn').onclick=()=>{
-      data={type:null,mode:'cast',photoData:null,croppedPhotoData:null,objW:null,objH:null,objD:null,frame:{w:21,h:30,d:4}};
+      data={
+  type:null,
+  mode:'cast',
+  photoData:null,
+  croppedPhotoData:null,
+  objW:null,
+  objH:null,
+  objD:null,
+  frameColor:'black',
+  frame:{w:21,h:30,d:4}
+};
       selectedType=null;
       selectedMode='cast';
       selectedFrame=1;
@@ -750,23 +780,6 @@
       fill.position.set(-50,40,50);
       scene.add(fill);
       createFrameModel();
-      function applyFrameColor(color){
-  data.frameColor = color;
-
-  const colorValue = color === 'white' ? 0xffffff : 0x111111;
-  const roughnessValue = color === 'white' ? .42 : .58;
-
-  frameMeshes.forEach(mesh=>{
-    mesh.material.color.setHex(colorValue);
-    mesh.material.roughness = roughnessValue;
-    mesh.material.needsUpdate = true;
-  });
-
-  document.querySelectorAll('.color-dot').forEach(btn=>{
-    btn.classList.toggle('selected', btn.dataset.frameColor === color);
-    btn.textContent = btn.dataset.frameColor === color ? '✓' : '';
-  });
-}
       animate3D();
       window.addEventListener('resize',on3DResize);
     }
@@ -794,10 +807,10 @@
 });
       const inner=new THREE.MeshStandardMaterial({color:0xf8f5eb,roughness:.72});
       const glass=new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:.18,roughness:.05,transmission:.25});
-     frameMeshes.push(box(ow,th,fd,0,ih/2+th/2,0,black,frameGroup));
-frameMeshes.push(box(ow,th,fd,0,-ih/2-th/2,0,black,frameGroup));
-frameMeshes.push(box(th,ih,fd,-iw/2-th/2,0,0,black,frameGroup));
-frameMeshes.push(box(th,ih,fd,iw/2+th/2,0,0,black,frameGroup));
+     frameMeshes.push(box(ow,th,fd,0,ih/2+th/2,0,frameMaterial,frameGroup));
+frameMeshes.push(box(ow,th,fd,0,-ih/2-th/2,0,frameMaterial,frameGroup));
+frameMeshes.push(box(th,ih,fd,-iw/2-th/2,0,0,frameMaterial,frameGroup));
+frameMeshes.push(box(th,ih,fd,iw/2+th/2,0,0,frameMaterial,frameGroup));
       box(iw,ih,.55,0,0,-fd/2,inner,frameGroup);
       box(iw,.42,fd,0,ih/2,0,inner,frameGroup);
       box(iw,.42,fd,0,-ih/2,0,inner,frameGroup);
@@ -913,6 +926,39 @@ frameMeshes.push(box(th,ih,fd,iw/2+th/2,0,0,black,frameGroup));
       renderer.render(scene,camera);
     }
 
+    function applyFrameColor(color){
+
+  data.frameColor = color;
+
+
+
+  const colorValue = color === 'white' ? 0xffffff : 0x111111;
+
+  const roughnessValue = color === 'white' ? .42 : .58;
+
+
+
+  frameMeshes.forEach(mesh=>{
+
+    mesh.material.color.setHex(colorValue);
+
+    mesh.material.roughness = roughnessValue;
+
+    mesh.material.needsUpdate = true;
+
+  });
+
+
+
+  document.querySelectorAll('.color-dot').forEach(btn=>{
+
+    btn.classList.toggle('selected', btn.dataset.frameColor === color);
+
+    btn.textContent = btn.dataset.frameColor === color ? '✓' : '';
+
+  });
+
+}
     async function openAR(){
       arScreen.style.display='block';
 
