@@ -787,7 +787,11 @@
       const fw=data.frame.w,fh=data.frame.h,fd=data.frame.d;
       const th=Math.max(1.6,Math.min(fw,fh)*.075);
       const iw=fw,ih=fh,ow=fw+th*2;
-      const black=new THREE.MeshStandardMaterial({color:0x111111,roughness:.58,metalness:.08});
+     const frameMaterial=new THREE.MeshStandardMaterial({
+  color:data.frameColor === 'white' ? 0xffffff : 0x111111,
+  roughness:data.frameColor === 'white' ? .42 : .58,
+  metalness:.08
+});
       const inner=new THREE.MeshStandardMaterial({color:0xf8f5eb,roughness:.72});
       const glass=new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:.18,roughness:.05,transmission:.25});
      frameMeshes.push(box(ow,th,fd,0,ih/2+th/2,0,black,frameGroup));
