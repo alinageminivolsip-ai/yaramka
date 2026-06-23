@@ -196,10 +196,21 @@
 
     #arScreen { display:none; position:fixed; inset:0; z-index:999; background:#111; }
     #arCamera { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-    #arFrame { position:absolute; left:50%; top:50%; width:260px; height:360px; transform:translate(-50%,-50%); border:16px solid #111; border-radius:8px; box-shadow:0 18px 40px rgba(0,0,0,.35); background:rgba(255,255,255,.08); touch-action:none; }
-    #arFrame:after { content:""; position:absolute; inset:12px; border:2px dashed rgba(255,255,255,.75); border-radius:4px; }
-    #closeArBtn { position:absolute; top:calc(env(safe-area-inset-top) + 14px); right:14px; z-index:2; border:0; border-radius:999px; padding:12px 16px; background:#fff; color:#22314A; font-weight:900; }
-    #arScale { position:absolute; left:20px; right:20px; bottom:calc(env(safe-area-inset-bottom) + 24px); width:calc(100% - 40px); z-index:2; }
+   #ar3d{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:1;
+  touch-action:none;
+}
+
+#closeArBtn,
+#arScale{
+  z-index:3;
+}
+    #closeArBtn { position:absolute; top:calc(env(safe-area-inset-top) + 14px); right:14px; z-index:3; border:0; border-radius:999px; padding:12px 16px; background:#fff; color:#22314A; font-weight:900; }
+    #arScale { position:absolute; left:20px; right:20px; bottom:calc(env(safe-area-inset-bottom) + 24px); width:calc(100% - 40px); z-index:3; }
 
     @media(min-width:900px) {
       .screen { max-width:1120px; width:100%; margin:0 auto; }
@@ -325,8 +336,8 @@
     </div>
 
     <section id="arScreen">
-      <video id="arCamera" autoplay playsinline muted></video>
-      <div id="arFrame"></div>
+     <video id="arCamera" autoplay playsinline muted></video>
+<div id="ar3d"></div>
       <button id="closeArBtn" type="button">Закрыть</button>
       <input id="arScale" type="range" min="120" max="520" value="260">
     </section>
@@ -347,7 +358,7 @@
     const cropWrap=$('cropWrap'),cropImg=$('cropImg'),cropBox=$('cropBox'),cropHandle=$('cropHandle'),cropBtn=$('cropBtn'),cropActions=$('cropActions'),cropBackBtn=$('cropBackBtn'),cropNextBtn=$('cropNextBtn');
     const numberInputWrap=$('numberInputWrap'),answerInput=$('answerInput'),presetWrap=$('presetWrap'),customGrid=$('customGrid'),customW=$('customW'),customH=$('customH'),customD=$('customD'),mainActions=$('mainActions');
     const resultBadge=$('resultBadge'),resultTitle=$('resultTitle'),resultText=$('resultText'),objectMetric=$('objectMetric'),frameMetric=$('frameMetric'),marginMetric=$('marginMetric');
-    const arScreen=$('arScreen'),arCamera=$('arCamera'),arFrame=$('arFrame'),closeArBtn=$('closeArBtn'),arScale=$('arScale');
+    const arScreen=$('arScreen'),arCamera=$('arCamera'),ar3d=$('ar3d'),closeArBtn=$('closeArBtn'),arScale=$('arScale');
 
     const objectTypes=['Вышивка','Медали','Фигурка','Детские вещи','Коллекционный предмет','Другое'];
     const modes=[
@@ -375,7 +386,8 @@
 
     let data={type:null,mode:'cast',photoData:null,croppedPhotoData:null,objW:null,objH:null,objD:null,frame:{w:21,h:30,d:4}};
     let step=0,selectedType=null,selectedMode='cast',selectedFrame=1;
-    let arStream=null,arDrag={active:false,dx:0,dy:0,x:window.innerWidth/2,y:window.innerHeight/2};
+    let arStream=null;
+let arScene, arCamera3D, arRenderer, arControls, arGroup;
 
     function showScreen(name){
       startScreen.style.display=name==='start'?'flex':'none';
@@ -824,50 +836,124 @@
       renderer.render(scene,camera);
     }
 
-    async function openAR(){
-      arScreen.style.display='block';
-      try{
-        arStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
-        arCamera.srcObject=arStream;
-      }catch(e){
-        alert('Не удалось открыть камеру. Проверьте доступ к камере и HTTPS.');
-      }
-      updateARFrame();
-    }
+   async function openAR(){
+  arScreen.style.display='block';
 
-    function closeAR(){
-      arScreen.style.display='none';
-      if(arStream){arStream.getTracks().forEach(t=>t.stop());arStream=null;}
-    }
-
-    function updateARFrame(){
-      const frameRatio=data.frame.h/data.frame.w;
-      const w=Number(arScale.value);
-      const h=w*frameRatio;
-      arFrame.style.width=w+'px';
-      arFrame.style.height=h+'px';
-      arFrame.style.left=arDrag.x+'px';
-      arFrame.style.top=arDrag.y+'px';
-    }
-
-    arFrame.addEventListener('pointerdown',e=>{
-      arDrag.active=true;
-      arDrag.dx=e.clientX-arDrag.x;
-      arDrag.dy=e.clientY-arDrag.y;
-      arFrame.setPointerCapture(e.pointerId);
+  try{
+    arStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'}},
+      audio:false
     });
+    arCamera.srcObject=arStream;
+  }catch(e){
+    alert('Не удалось открыть камеру. Проверьте доступ к камере и HTTPS.');
+  }
 
-    arFrame.addEventListener('pointermove',e=>{
-      if(!arDrag.active)return;
-      arDrag.x=e.clientX-arDrag.dx;
-      arDrag.y=e.clientY-arDrag.dy;
-      updateARFrame();
-    });
+  initAR3D();
+}
 
-    arFrame.addEventListener('pointerup',()=>{arDrag.active=false;});
-    arScale.addEventListener('input',updateARFrame);
-    $('arBtn').addEventListener('click',openAR);
-    closeArBtn.addEventListener('click',closeAR);
+function closeAR(){
+  arScreen.style.display='none';
+
+  if(arStream){
+    arStream.getTracks().forEach(t=>t.stop());
+    arStream=null;
+  }
+
+  if(arRenderer){
+    arRenderer.dispose();
+    ar3d.innerHTML='';
+    arRenderer=null;
+  }
+}
+
+function initAR3D(){
+  ar3d.innerHTML='';
+
+  const rect=ar3d.getBoundingClientRect();
+
+  arScene=new THREE.Scene();
+
+  arCamera3D=new THREE.PerspectiveCamera(
+    38,
+    rect.width/rect.height,
+    .1,
+    1000
+  );
+
+  arCamera3D.position.set(0,-72,54);
+
+  arRenderer=new THREE.WebGLRenderer({
+    antialias:true,
+    alpha:true
+  });
+
+  arRenderer.setSize(rect.width,rect.height);
+  arRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  arRenderer.setClearColor(0x000000,0);
+
+  ar3d.appendChild(arRenderer.domElement);
+
+  arControls=new OrbitControls(arCamera3D,arRenderer.domElement);
+  arControls.enableDamping=true;
+  arControls.enablePan=true;
+  arControls.enableZoom=true;
+  arControls.minDistance=35;
+  arControls.maxDistance=140;
+  arControls.target.set(0,0,0);
+
+  arScene.add(new THREE.AmbientLight(0xffffff,1.6));
+
+  const light=new THREE.DirectionalLight(0xffffff,1.4);
+  light.position.set(40,-50,80);
+  arScene.add(light);
+
+  createARFrameModel();
+  animateAR();
+}
+
+function createARFrameModel(){
+  arGroup=new THREE.Group();
+  arScene.add(arGroup);
+
+  const oldScene=scene;
+  const oldFrameGroup=frameGroup;
+
+  scene=arScene;
+  frameGroup=arGroup;
+
+  createFrameModel();
+
+  scene=oldScene;
+  frameGroup=oldFrameGroup;
+
+  arGroup.rotation.x=-.55;
+  arGroup.rotation.z=.08;
+  arGroup.scale.setScalar(Number(arScale.value)/260);
+}
+
+function animateAR(){
+  if(!arRenderer)return;
+
+  requestAnimationFrame(animateAR);
+
+  arControls.update();
+
+  if(arGroup){
+    arGroup.scale.setScalar(Number(arScale.value)/260);
+  }
+
+  arRenderer.render(arScene,arCamera3D);
+}
+
+arScale.addEventListener('input',()=>{
+  if(arGroup){
+    arGroup.scale.setScalar(Number(arScale.value)/260);
+  }
+});
+
+$('arBtn').addEventListener('click',openAR);
+closeArBtn.addEventListener('click',closeAR);
 
     window.addEventListener('load',()=>{setTimeout(()=>{$('splash')?.classList.add('hide');},750);});
     showScreen('start');
