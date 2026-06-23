@@ -428,7 +428,17 @@
       {key:'frame',title:'Какую рамку проверяем?',text:'Выберите размер рамки или введите свой.',presets:true}
     ];
 
-    let data={type:null,mode:'cast',photoData:null,croppedPhotoData:null,objW:null,objH:null,objD:null,frame:{w:21,h:30,d:4}};
+   let data={
+  type:null,
+  mode:'cast',
+  photoData:null,
+  croppedPhotoData:null,
+  objW:null,
+  objH:null,
+  objD:null,
+  frameColor:'black',
+  frame:{w:21,h:30,d:4}
+};
     let step=0,selectedType=null,selectedMode='cast',selectedFrame=1;
     let arStream=null;
     let arScene, arCamera3D, arRenderer, arControls, arGroup;
