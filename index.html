@@ -112,22 +112,19 @@
     .lead { font-size:16px; line-height:1.45; color:#637187; margin-top:12px; }
     .mini { font-size:13px; line-height:1.35; color:#7D8797; margin-top:12px; }
 
-    .hero-visual {
+  .hero-visual{
   margin-top:20px;
-  min-height:158px;
+  height:220px;
   border-radius:28px;
   overflow:hidden;
-  position:relative;
-  background-image:url("./hero-banner.png?v=14");
-  background-size:cover;
-  background-position:center;
-  background-repeat:no-repeat;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+  background:#1F5ED9;
 }
 
-.hero-visual:before,
-.hero-visual:after {
-  content:none;
+.hero-visual img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
 }
 
     .question { display:none; min-height:calc(100vh - 112px - env(safe-area-inset-top)); align-items:center; }
@@ -245,7 +242,9 @@
         <div class="card">
           <h1>Примерьте глубокую рамку до покупки</h1>
           <p class="lead">Загрузите фото предмета, укажите размеры и посмотрите, как он будет смотреться внутри рамки.</p>
-          <div class="hero-visual"></div>
+         <div class="hero-visual">
+  <img src="./hero-banner.png" alt="">
+</div>
           <p class="mini">Можно проверить посадку в 3D и примерить рамку в интерьере через камеру.</p>
           <div class="bottom-actions">
             <button class="btn primary full" id="startBtn" type="button">Начать примерку</button>
