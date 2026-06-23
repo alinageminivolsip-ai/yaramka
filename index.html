@@ -53,15 +53,25 @@
       <section class="question" id="questionScreen"><div class="card" style="width:100%"><h2 id="questionTitle"></h2><p class="lead" id="questionText"></p><div id="choiceWrap" class="choices"></div><div id="uploadWrap" class="upload-box" style="display:none"><input class="file-input" id="photoInput" type="file" accept="image/*"><button class="btn primary full" id="uploadBtn" type="button">Выбрать фото</button><p class="mini">Для слепка лучше светлый предмет на контрастном фоне.</p><div class="upload-preview" id="uploadPreview"><img id="previewImg" alt="Фото предмета"></div></div><div id="numberInputWrap" class="field-big" style="display:none"><input id="answerInput" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0"/><div class="unit">см</div></div><div id="presetWrap" class="presets" style="display:none"></div><div class="custom-grid" id="customGrid"><input id="customW" type="number" placeholder="Ширина" step="0.1"><input id="customH" type="number" placeholder="Высота" step="0.1"><input id="customD" type="number" placeholder="Глубина" step="0.1"></div><div class="bottom-actions"><button class="btn" id="backBtn">Назад</button><button class="btn primary" id="nextBtn">Далее</button></div></div></section>
       <section class="result-screen" id="resultScreen"><div class="result-header"><div class="badge warn" id="resultBadge">Расчет</div><div class="result-title" id="resultTitle">Проверяем посадку</div><p class="lead" id="resultText"></p><div class="metrics"><div class="metric"><span>Предмет</span><b id="objectMetric">—</b></div><div class="metric"><span>Рамка</span><b id="frameMetric">—</b></div><div class="metric"><span>Запас</span><b id="marginMetric">—</b></div></div><div class="bottom-actions"><button class="btn" id="restartBtn">Заново</button><button class="btn primary" id="editBtn">Изменить</button></div></div><div class="viewer"><div id="viewer3d"></div><div class="viewer-note"><b>Покрутите рамку пальцем.</b> В режиме слепка объект строится по силуэту фото и получает матовый материал с мягкой шероховатостью.</div></div></section>
     </div>
-    <div id="cropWrap" class="upload-box" style="display:none">
+     <div id="cropWrap" class="upload-box" style="display:none">
+
+
 
   <div style="position:relative;border-radius:20px;overflow:hidden;background:#fff;border:1px solid var(--line)">
 
+
+
     <img id="cropImg" style="display:block;width:100%;max-height:420px;object-fit:contain">
+
+
 
     <div id="cropBox" style="position:absolute;left:15%;top:15%;width:70%;height:70%;border:3px solid var(--yellow);border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35);touch-action:none">
 
+
+
       <div id="cropHandle" style="position:absolute;right:-10px;bottom:-10px;width:28px;height:28px;border-radius:50%;background:var(--yellow);border:3px solid #fff"></div>
+
+
 
     </div>
   </div>
@@ -144,8 +154,6 @@ function cropImage(){
   data.croppedPhotoData=c.toDataURL('image/png');
   cropBtn.textContent='Предмет вырезан';
   setTimeout(()=>cropBtn.textContent='Вырезать предмет',900);
-}
-  img.src=data.photoData;
 }
 
 cropBox.addEventListener('pointerdown',e=>{
